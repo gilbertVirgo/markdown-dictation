@@ -1,0 +1,26 @@
+import { describe, expect, it } from 'vitest'
+import { REFINE_SYSTEM, buildRefineUser } from '../../src/lib/refinePrompt'
+
+describe('buildRefineUser', () => {
+  it('keeps short doc unchanged and tags block + raw', () => {
+    const out = buildRefineUser('# Doc\nhello', 'the knee higher', 'h2')
+    expect(out).toBe('<document>\n# Doc\nhello\n</document>\n<block_type>h2</block_type>\n<raw>the knee higher</raw>')
+  })
+  it('caps long doc to head + ellipsis + tail', () => {
+    const doc = 'H'.repeat(500) + 'M'.repeat(1000) + 'T'.repeat(6000)
+    const out = buildRefineUser(doc, 'x', 'body')
+    expect(out).toContain('H'.repeat(500) + '\n…\n' + 'T'.repeat(6000))
+    expect(out).not.toContain('M')
+  })
+  it('does not cap at exactly 6500', () => {
+    const doc = 'a'.repeat(6500)
+    expect(buildRefineUser(doc, 'x', 'body')).toContain(doc)
+  })
+})
+
+describe('REFINE_SYSTEM', () => {
+  it('tells model to prefer document terms', () => {
+    expect(REFINE_SYSTEM).toContain('prefer')
+    expect(REFINE_SYSTEM).toContain('Nehemiah')
+  })
+})
