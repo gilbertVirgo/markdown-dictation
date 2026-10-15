@@ -18,7 +18,7 @@ export default function DocPage() {
   const editor = useRef<EditorHandle>(null)
   // Latest markdown kept in a ref so unmount flush works after the editor ref is detached.
   const latest = useRef('')
-  const { status, markDirty } = useAutosave(id, () => latest.current)
+  const { status, markDirty, cancel, flush } = useAutosave(id, () => latest.current)
 
   useEffect(() => {
     api<Doc>('/docs/' + id).then(
@@ -43,12 +43,11 @@ export default function DocPage() {
     const w = window as unknown as { __dictate?: unknown }
     w.__dictate = {
       insertChunk(text: string, block: BlockType) {
-        editor.current?.insertChunk(text, block, '')
-        markDirty()
+        editor.current?.insertChunk(text, block, '') // onUpdate -> onChange -> markDirty
       },
     }
     return () => void delete w.__dictate
-  }, [markDirty])
+  }, [])
 
   const title = () => deriveTitle(latest.current)
 
@@ -57,16 +56,23 @@ export default function DocPage() {
     a.href = URL.createObjectURL(new Blob([latest.current], { type: 'text/markdown' }))
     a.download = `${title()}.md`
     a.click()
-    URL.revokeObjectURL(a.href)
+    setTimeout(() => URL.revokeObjectURL(a.href), 0)
   }
 
   async function remove() {
     if (!confirm(`Delete "${title()}"?`)) return
-    await api('/docs/' + id, { method: 'DELETE' })
-    navigate('/')
+    await cancel()
+    try {
+      await api('/docs/' + id, { method: 'DELETE' })
+      navigate('/')
+    } catch (e) {
+      markDirty() // re-arm the changes cancel() dropped
+      alert((e as Error).message)
+    }
   }
 
   async function logout() {
+    await flush()
     await api('/logout', { method: 'POST' }).catch(() => {})
     location.replace('/login')
   }
@@ -82,7 +88,7 @@ export default function DocPage() {
         <span className={`rounded-full bg-surface px-3 py-1 text-sm ${status === 'error' ? 'text-primary' : 'text-muted'}`}>
           {STATUS[status]}
         </span>
-        <details className="relative ml-auto">
+        <details className="relative ml-auto" onClick={(e) => (e.target as HTMLElement).closest('button') && e.currentTarget.removeAttribute('open')}>
           <summary aria-label="Menu" className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center text-xl [&::-webkit-details-marker]:hidden">
             ⋯
           </summary>
@@ -111,7 +117,7 @@ export default function DocPage() {
 
       <div className="flex flex-1 flex-col">
         {failed && <p className="p-8 text-center text-muted">Couldn’t load this document.</p>}
-        {doc && <Editor ref={editor} initial={doc.markdown} editable={mode === 'text'} onChange={onChange} />}
+        {doc && <Editor key={id} ref={editor} initial={doc.markdown} editable={mode === 'text'} onChange={onChange} />}
       </div>
 
       {mode === 'voice' && (
