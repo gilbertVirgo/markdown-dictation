@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { api } from '../lib/api'
-import { deriveTitle } from '../lib/markdown'
+import { deriveTitle, extractVocabulary } from '../lib/markdown'
 import { Editor, type BlockType, type EditorHandle } from '../editor/Editor'
 import { useAutosave } from '../hooks/useAutosave'
+import { VoicePanel, loadSettings } from '../voice/VoicePanel'
 
 type Doc = { id: string; title: string; markdown: string; updatedAt: string }
 
@@ -19,6 +20,9 @@ export default function DocPage() {
   // Latest markdown kept in a ref so unmount flush works after the editor ref is detached.
   const latest = useRef('')
   const { status, markDirty, cancel, flush } = useAutosave(id, () => latest.current)
+  const [settings, setSettings] = useState(loadSettings)
+  const refine = useRef(settings.refine)
+  refine.current = settings.refine
 
   useEffect(() => {
     api<Doc>('/docs/' + id).then(
@@ -38,16 +42,30 @@ export default function DocPage() {
     [markDirty],
   )
 
+  // Final speech chunk: insert as pending (grey), then swap in Claude's refinement. Edits fire onChange -> markDirty.
+  const onChunk = useCallback((text: string, block: BlockType) => {
+    const ed = editor.current
+    if (!ed) return
+    const documentMarkdown = ed.getMarkdown() // before insert, so the raw chunk isn't its own context
+    const id = crypto.randomUUID()
+    ed.insertChunk(text, block, id)
+    // editor isn't focusable in voice mode, so bring the new text into view ourselves
+    requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }))
+    if (!refine.current) return ed.clearPending(id)
+    api<{ text: string }>('/refine', { method: 'POST', body: JSON.stringify({ documentMarkdown, chunk: text, block }) }).then(
+      (r) => editor.current?.replacePending(id, r.text),
+      () => editor.current?.clearPending(id),
+    )
+  }, [])
+
+  const vocabulary = useCallback(() => extractVocabulary(latest.current), [])
+
   useEffect(() => {
     if (!import.meta.env.DEV) return
     const w = window as unknown as { __dictate?: unknown }
-    w.__dictate = {
-      insertChunk(text: string, block: BlockType) {
-        editor.current?.insertChunk(text, block, '') // onUpdate -> onChange -> markDirty
-      },
-    }
+    w.__dictate = { insertChunk: onChunk }
     return () => void delete w.__dictate
-  }, [])
+  }, [onChunk])
 
   const title = () => deriveTitle(latest.current)
 
@@ -120,10 +138,8 @@ export default function DocPage() {
         {doc && <Editor key={id} ref={editor} initial={doc.markdown} editable={mode === 'text'} onChange={onChange} />}
       </div>
 
-      {mode === 'voice' && (
-        <div className="sticky bottom-0 border-t border-border bg-surface p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div>Voice panel (next task)</div>
-        </div>
+      {mode === 'voice' && doc && (
+        <VoicePanel onChunk={onChunk} vocabulary={vocabulary} settings={settings} setSettings={setSettings} />
       )}
     </main>
   )
