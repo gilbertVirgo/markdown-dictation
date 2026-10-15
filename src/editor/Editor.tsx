@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { EditorContent, useEditor, type Editor as TiptapEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -13,6 +13,7 @@ export type EditorHandle = {
   insertChunk(text: string, block: BlockType, pendingId: string): void
   replacePending(pendingId: string, text: string): void
   clearPending(pendingId: string): void
+  scrollToEnd(): void
 }
 
 // Shared with tests/unit/editor.test.ts so both build the same schema.
@@ -31,6 +32,7 @@ export const Editor = forwardRef<EditorHandle, { initial: string; editable: bool
       editable,
       onUpdate: ({ editor }) => onChange(getMarkdown(editor)),
     })
+    const scroller = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
       editor?.setEditable(editable, false)
@@ -41,11 +43,15 @@ export const Editor = forwardRef<EditorHandle, { initial: string; editable: bool
       insertChunk: (text, block, pendingId) => editor && insertChunk(editor, text, block, pendingId),
       replacePending: (pendingId, text) => editor && replacePending(editor, pendingId, text),
       clearPending: (pendingId) => editor && clearPending(editor, pendingId),
+      scrollToEnd: () => scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' }),
     }), [editor, initial])
 
     return (
       <>
-        <EditorContent editor={editor} className="px-4 py-4" />
+        {/* only this scrolls; the toolbar below stays pinned above the keyboard */}
+        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto [scroll-padding-bottom:3rem]">
+          <EditorContent editor={editor} className="px-4 py-4" />
+        </div>
         {editable && editor && <Toolbar editor={editor} />}
       </>
     )
