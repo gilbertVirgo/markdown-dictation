@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router'
+import Login from './pages/Login'
 
-const Login = () => <div>Login</div>
 const Home = () => <div>Home</div>
 const Doc = () => <div>Doc</div>
 
