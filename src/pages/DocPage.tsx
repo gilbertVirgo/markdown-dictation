@@ -39,7 +39,12 @@ export default function DocPage() {
     const close = (e: Event) => {
       const m = menu.current
       if (!m?.open) return
-      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !m.contains(e.target as Node)) m.open = false
+      if (!(e instanceof KeyboardEvent)) {
+        if (!m.contains(e.target as Node)) m.open = false
+      } else if (e.key === 'Escape') {
+        m.open = false
+        m.querySelector('summary')?.focus()
+      }
     }
     document.addEventListener('pointerdown', close)
     document.addEventListener('keydown', close)
@@ -127,8 +132,8 @@ export default function DocPage() {
 
   return (
     // fixed-height column sized to the visible viewport: header and footer stay put, only the editor scrolls
-    <main data-size={settings.size} className="mx-auto flex h-[var(--vvh,100dvh)] w-full max-w-[720px] flex-col overflow-hidden bg-bg text-fg">
-      <header className="sticky top-0 z-10 shrink-0 border-b border-border bg-bg pt-[env(safe-area-inset-top)]">
+    <main data-size={settings.size} className="fixed inset-x-0 top-[var(--vvt,0px)] mx-auto flex h-[var(--vvh,100dvh)] w-full max-w-[720px] flex-col overflow-hidden bg-bg text-fg">
+      <header className="shrink-0 border-b border-border bg-bg pt-[env(safe-area-inset-top)]">
         <div className="flex items-center gap-1 px-1">
           <button onClick={() => navigate('/')} aria-label="Back" className="flex min-h-11 min-w-11 items-center justify-center">
             <ArrowLeft />

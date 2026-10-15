@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import type { EngineName } from '../voice/useTranscriber'
 
-export type Size = 'small' | 'medium' | 'large'
+type Size = 'small' | 'medium' | 'large'
 export type Settings = { engine: EngineName; refine: boolean; lang: string; size: Size }
 const KEY = 'dictate.settings'
 const ENGINE_NAMES: EngineName[] = ['webspeech', 'openai', 'deepgram']
 export const SIZES: Size[] = ['small', 'medium', 'large']
 export const DEFAULTS: Settings = { engine: 'webspeech', refine: true, lang: 'en-GB', size: 'medium' }
 
-export function loadSettings(): Settings {
+function loadSettings(): Settings {
   try {
     const s: Settings = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') }
     if (!ENGINE_NAMES.includes(s.engine)) s.engine = DEFAULTS.engine

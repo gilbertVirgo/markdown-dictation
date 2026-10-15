@@ -15,6 +15,7 @@ export function SettingsDialog({ ref, settings, update }: {
       onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
       onClose={() => {
         const lang = langInput.current?.value.trim() || DEFAULTS.lang
+        if (langInput.current) langInput.current.value = lang // show the normalised value next time
         if (lang !== settings.lang) update({ lang })
       }}
       className="m-auto w-[min(24rem,calc(100%-2rem))] rounded-xl border border-border bg-bg p-0 text-fg backdrop:bg-black/50"

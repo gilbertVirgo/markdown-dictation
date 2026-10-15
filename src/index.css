@@ -24,8 +24,10 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); -
   min-height: 60vh; outline: none;
   font-family: "Libertinus Math", "Libertinus Serif", Georgia, serif;
   font-size: var(--doc-size); line-height: 1.55; letter-spacing: var(--doc-track);
-  font-kerning: normal; hanging-punctuation: first; -webkit-font-smoothing: antialiased;
+  font-kerning: normal; font-synthesis: none; hanging-punctuation: first; -webkit-font-smoothing: antialiased;
 }
+/* Libertinus Math has one regular face; real bold/italic come from Libertinus Serif */
+.ProseMirror :is(h1, h2, h3, strong, em, blockquote) { font-family: "Libertinus Serif", Georgia, serif; }
 [data-size="small"] .ProseMirror { --doc-size: 1.05rem; --doc-track: 0; --doc-head-track: -0.015em; }
 [data-size="large"] .ProseMirror { --doc-size: 1.45rem; --doc-track: -0.01em; --doc-head-track: -0.025em; }
 .ProseMirror :is(h1, h2, h3) { line-height: 1.2; letter-spacing: var(--doc-head-track); text-wrap: balance; margin: 0.75em 0 0.4em; }
