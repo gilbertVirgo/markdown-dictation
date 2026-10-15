@@ -28,3 +28,4 @@ dist
 .netlify
 test-results
 .superpowers/
+playwright-report
