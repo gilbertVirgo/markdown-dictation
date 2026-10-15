@@ -23,8 +23,12 @@ export default function DocPage() {
   const [settings, setSettings] = useState(loadSettings)
   const refine = useRef(settings.refine)
   refine.current = settings.refine
+  const modeRef = useRef(mode)
+  modeRef.current = mode
 
   useEffect(() => {
+    setDoc(null)
+    setFailed(false)
     api<Doc>('/docs/' + id).then(
       (d) => {
         latest.current = d.markdown
@@ -50,7 +54,7 @@ export default function DocPage() {
     const id = crypto.randomUUID()
     ed.insertChunk(text, block, id)
     // editor isn't focusable in voice mode, so bring the new text into view ourselves
-    requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }))
+    if (modeRef.current === 'voice') requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }))
     if (!refine.current) return ed.clearPending(id)
     api<{ text: string }>('/refine', { method: 'POST', body: JSON.stringify({ documentMarkdown, chunk: text, block }) }).then(
       (r) => editor.current?.replacePending(id, r.text),
@@ -98,7 +102,7 @@ export default function DocPage() {
   const item = 'block w-full min-h-11 px-4 text-left'
 
   return (
-    <main className="flex min-h-dvh flex-col bg-bg text-fg">
+    <main className="mx-auto flex min-h-dvh w-full max-w-[720px] flex-col bg-bg text-fg">
       <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-border bg-bg px-1">
         <button onClick={() => navigate('/')} aria-label="Back" className="min-h-11 min-w-11 text-xl">
           ←

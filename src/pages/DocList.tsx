@@ -15,10 +15,11 @@ function ago(iso: string) {
 export default function DocList() {
   const [docs, setDocs] = useState<Item[] | null>(null)
   const [creating, setCreating] = useState(false)
+  const [failed, setFailed] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
-    api<{ docs: Item[] }>('/docs').then((r) => setDocs(r.docs), () => setDocs([]))
+    api<{ docs: Item[] }>('/docs').then((r) => setDocs(r.docs), () => setFailed(true))
   }, [])
 
   async function create() {
@@ -26,6 +27,8 @@ export default function DocList() {
     try {
       const { id } = await api<{ id: string }>('/docs', { method: 'POST' })
       navigate(`/doc/${id}`)
+    } catch (e) {
+      alert((e as Error).message)
     } finally {
       setCreating(false)
     }
@@ -33,12 +36,17 @@ export default function DocList() {
 
   async function remove(d: Item) {
     if (!confirm(`Delete "${d.title}"?`)) return
-    await api('/docs/' + d.id, { method: 'DELETE' })
-    setDocs((x) => x?.filter((i) => i.id !== d.id) ?? null)
+    try {
+      await api('/docs/' + d.id, { method: 'DELETE' })
+      setDocs((x) => x?.filter((i) => i.id !== d.id) ?? null)
+    } catch (e) {
+      alert((e as Error).message)
+    }
   }
 
   return (
-    <main className="min-h-dvh bg-bg text-fg pb-28">
+    <main className="mx-auto min-h-dvh w-full max-w-[720px] bg-bg text-fg pb-28">
+      {failed && <p className="p-8 text-center text-muted">Couldn’t load documents.</p>}
       {docs?.length === 0 && <p className="p-8 text-center text-muted">No documents yet. Tap + to start dictating.</p>}
       <ul>
         {docs?.map((d) => (

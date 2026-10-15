@@ -29,7 +29,7 @@ async function handle(req: Request): Promise<Response> {
       return Response.json({ docs: rows.map((r) => ({ id: String(r._id), title: r.title, updatedAt: r.updatedAt })) })
     }
     if (req.method === 'POST') {
-      const { insertedId } = await col.insertOne({ title: 'Untitled', markdown: '', updatedAt: new Date() } as never)
+      const { insertedId } = await col.insertOne({ title: 'Untitled', markdown: '', createdAt: new Date(), updatedAt: new Date() } as never)
       return Response.json({ id: String(insertedId) })
     }
     return noMethod()

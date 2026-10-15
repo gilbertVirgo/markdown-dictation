@@ -8,6 +8,7 @@ export function useAutosave(
   const [status, setStatus] = useState<'saved' | 'saving' | 'error'>('saved')
   const dirty = useRef(false)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const maxWait = useRef<ReturnType<typeof setTimeout>>(undefined) // caps debounce during continuous edits
   const queue = useRef<Promise<void>>(Promise.resolve())
   const get = useRef(getMarkdown)
   get.current = getMarkdown
@@ -19,6 +20,8 @@ export function useAutosave(
 
   // Runs serialized on `queue`; reads markdown at run time so a queued save always sends the latest body.
   const doSave = useCallback(async () => {
+    clearTimeout(maxWait.current)
+    maxWait.current = undefined
     if (!dirty.current) return
     dirty.current = false
     try {
@@ -32,13 +35,20 @@ export function useAutosave(
   const markDirty = useCallback(() => {
     dirty.current = true
     setStatus('saving')
+    const save = () => {
+      clearTimeout(timer.current)
+      queue.current = queue.current.then(doSave)
+    }
     clearTimeout(timer.current)
-    timer.current = setTimeout(() => (queue.current = queue.current.then(doSave)), 800)
+    timer.current = setTimeout(save, 800)
+    maxWait.current ??= setTimeout(save, 5000)
   }, [doSave])
 
   // Drop pending changes and wait for any in-flight save (e.g. before DELETE).
   const cancel = useCallback(() => {
     clearTimeout(timer.current)
+    clearTimeout(maxWait.current)
+    maxWait.current = undefined
     dirty.current = false
     return queue.current
   }, [])
@@ -48,6 +58,8 @@ export function useAutosave(
   const flushNow = useCallback(() => {
     if (!dirty.current) return Promise.resolve()
     clearTimeout(timer.current)
+    clearTimeout(maxWait.current)
+    maxWait.current = undefined
     dirty.current = false
     return fetch('/api/docs/' + id, {
       method: 'PUT',

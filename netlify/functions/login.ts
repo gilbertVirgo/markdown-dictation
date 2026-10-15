@@ -8,7 +8,7 @@ export default async (req: Request): Promise<Response> => {
   const secret = process.env.SESSION_SECRET
   const expected = process.env.APP_PASSWORD
   if (!secret || !expected) return Response.json({ error: 'server misconfigured' }, { status: 500 })
-  const { password } = (await req.json().catch(() => ({}))) as { password?: unknown }
+  const { password } = ((await req.json().catch(() => null)) ?? {}) as { password?: unknown }
   const given = Buffer.from(typeof password === 'string' ? password : '')
   const want = Buffer.from(expected)
   const len = Math.max(given.length, want.length)
