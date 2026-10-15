@@ -65,3 +65,27 @@ it('markdown never contains pending spans', () => {
   expect(getMarkdown(ed)).not.toContain('data-pending')
   expect(getMarkdown(ed)).toBe('Hello world\n\n> quoted')
 })
+
+it('a lone "new line" chunk becomes a hardBreak', () => {
+  make('First.')
+  expect(insertChunk(ed, '\n', 'body', 'a')).toBe(true)
+  replacePending(ed, 'a', '\n')
+  expect(ed.getJSON().content![0].content!.map((n) => n.type)).toEqual(['text', 'hardBreak'])
+  expect(ed.getJSON().content![0].content![0].text).toBe('First.') // separator and raw text gone
+})
+
+it('a lone "new paragraph" chunk splits the paragraph', () => {
+  make('First.')
+  insertChunk(ed, '\n\n', 'body', 'a')
+  replacePending(ed, 'a', '\n\n')
+  insertChunk(ed, 'second', 'body', 'b')
+  replacePending(ed, 'b', 'Second.')
+  expect(types()).toEqual(['paragraph', 'paragraph'])
+  expect(getMarkdown(ed)).toBe('First.\n\nSecond.')
+})
+
+it('blank chunk inserts nothing', () => {
+  make('First.')
+  expect(insertChunk(ed, '  ', 'body', 'a')).toBe(false)
+  expect(getMarkdown(ed)).toBe('First.')
+})

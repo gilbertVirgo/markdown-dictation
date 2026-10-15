@@ -31,4 +31,9 @@ describe('REFINE_SYSTEM', () => {
     for (const p of ['"new line"', '"newline"', '"line break"', '"carriage return"', '"new paragraph"', 'ALWAYS be converted'])
       expect(REFINE_SYSTEM).toContain(p)
   })
+  it('shows newline escapes literally and has no bare "paragraph" command', () => {
+    expect(REFINE_SYSTEM).toContain('(\\n\\n)')
+    expect(REFINE_SYSTEM).not.toContain('/ "paragraph" ->')
+    expect(REFINE_SYSTEM).toContain('when clearly used as a command')
+  })
 })

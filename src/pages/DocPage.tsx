@@ -76,7 +76,7 @@ export default function DocPage() {
     const documentMarkdown = ed.getMarkdown() // before insert, so the raw chunk isn't its own context
     const id = crypto.randomUUID()
     const processed = applySpokenCommands(text)
-    ed.insertChunk(processed, block, id)
+    if (!ed.insertChunk(processed, block, id)) return
     // editor isn't focusable in voice mode, so bring the new text into view ourselves
     if (modeRef.current === 'voice') requestAnimationFrame(() => editor.current?.scrollToEnd())
     if (!refine.current) return ed.replacePending(id, processed)
