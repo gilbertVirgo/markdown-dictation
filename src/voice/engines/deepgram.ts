@@ -31,7 +31,8 @@ export const deepgram: Engine = {
     try {
       s = await navigator.mediaDevices.getUserMedia({ audio: true })
     } catch {
-      if (session === me) session = null
+      if (session !== me) return
+      session = null
       return opts.onError('Microphone access was denied')
     }
     if (session !== me) return s.getTracks().forEach((t) => t.stop()) // stopped while awaiting permission
@@ -70,7 +71,12 @@ export const deepgram: Engine = {
         keepAlive = setInterval(() => sock.readyState === WebSocket.OPEN && sock.send(JSON.stringify({ type: 'KeepAlive' })), 5000)
       }
       sock.onmessage = (e) => {
-        const data = JSON.parse(e.data as string)
+        let data
+        try {
+          data = JSON.parse(e.data as string)
+        } catch {
+          return // ignore malformed frames
+        }
         if (data.type !== 'Results') return
         failures = 0 // only a working stream resets the counter
         const text: string = data.channel?.alternatives?.[0]?.transcript?.trim() ?? ''
@@ -98,8 +104,10 @@ export const deepgram: Engine = {
     ws = null
     stream = null
     const close = () => {
-      if (sock?.readyState === WebSocket.OPEN) sock.send(JSON.stringify({ type: 'CloseStream' })) // server flushes finals, then closes
-      else sock?.close()
+      if (sock?.readyState === WebSocket.OPEN) {
+        sock.send(JSON.stringify({ type: 'CloseStream' })) // server flushes finals, then closes
+        setTimeout(() => sock.close(), 3000) // fallback so socket + KeepAlive can't leak
+      } else sock?.close()
     }
     if (r?.state === 'recording') {
       r.onstop = close // last chunk is sent (dataavailable fires before stop) before CloseStream
