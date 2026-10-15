@@ -22,16 +22,19 @@ export function useTranscriber(opts: { engine: EngineName; lang: string; vocabul
   const [interim, setInterim] = useState('')
   const [error, setError] = useState<string | null>(null)
   const mutedRef = useRef(false)
+  const call = useRef(0) // bumped per start()/stop() so a superseded start's callbacks are ignored
   const latest = useRef(opts)
   latest.current = opts
 
   const stop = useCallback(() => {
+    call.current++
     ENGINES[engine].stop()
     setLive(false)
     setInterim('')
   }, [engine])
 
   const start = useCallback(() => {
+    const me = ++call.current
     let failed = false
     setError(null)
     ENGINES[engine]
@@ -40,18 +43,25 @@ export function useTranscriber(opts: { engine: EngineName; lang: string; vocabul
         vocabulary: () => latest.current.vocabulary(),
         onFinal(text) {
           setInterim('')
+          if (!failed && call.current === me) setError(null) // transient error recovered
           if (!mutedRef.current) latest.current.onFinal(text)
         },
         onInterim(text) {
           setInterim(mutedRef.current ? '' : text)
         },
-        onError(msg) {
-          failed = true
+        onError(msg, fatal = true) {
+          if (call.current !== me) return
           setError(msg)
+          if (!fatal) return // transient (e.g. one failed upload): keep listening
+          failed = true
+          ENGINES[engine].stop()
           setLive(false)
         },
       })
-      .then(() => setLive(!failed), (e: Error) => (setError(e.message), setLive(false)))
+      .then(
+        () => call.current === me && setLive(!failed),
+        (e: Error) => call.current === me && (setError(e.message), setLive(false)),
+      )
   }, [engine, lang])
 
   // Mounted only in voice mode: start on enter / engine or language change, stop on leave.

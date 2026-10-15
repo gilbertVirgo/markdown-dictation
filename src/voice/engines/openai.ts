@@ -43,12 +43,12 @@ export const openai: Engine = {
           opts.onError('session expired')
           return openai.stop()
         }
-        if (!res.ok) return session === me && opts.onError('transcription failed')
+        if (!res.ok) return session === me && opts.onError('transcription failed', false)
         // Deliver even after stop(): the final flushed segment must not be lost.
         const { text } = (await res.json()) as { text?: string }
         if (text?.trim()) opts.onFinal(text.trim())
       } catch {
-        if (session === me) opts.onError('transcription failed')
+        if (session === me) opts.onError('transcription failed', false)
       }
     }
 
