@@ -27,3 +27,4 @@ dist
 .env
 .netlify
 test-results
+.superpowers/
