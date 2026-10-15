@@ -1,9 +1,71 @@
 import type { Engine } from './types'
 
-// Replaced in a later task.
+const SEG_MS = 8000
+const MIN_BYTES = 2048
+const MAX_WORDS = 200
+
+let session: object | null = null
+let stream: MediaStream | null = null
+let rec: MediaRecorder | null = null
+
 export const openai: Engine = {
   async start(opts) {
-    opts.onError('not implemented yet')
+    openai.stop()
+    const me = {}
+    session = me
+    const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported(t))
+    if (!mimeType) {
+      session = null
+      return opts.onError('Audio recording is not supported in this browser')
+    }
+    const ext = mimeType.startsWith('audio/mp4') ? 'm4a' : 'webm'
+    let s: MediaStream
+    try {
+      s = await navigator.mediaDevices.getUserMedia({ audio: true })
+    } catch {
+      if (session === me) session = null
+      return opts.onError('Microphone access was denied')
+    }
+    if (session !== me) return s.getTracks().forEach((t) => t.stop()) // stopped while awaiting permission
+    stream = s
+
+    const upload = async (blob: Blob) => {
+      if (blob.size < MIN_BYTES) return
+      const body = new FormData()
+      body.append('file', blob, `chunk.${ext}`)
+      body.append('prompt', opts.vocabulary().join(', ').split(/\s+/).slice(0, MAX_WORDS).join(' '))
+      body.append('lang', opts.lang)
+      try {
+        const res = await fetch('/api/transcribe-openai', { method: 'POST', body })
+        if (session !== me) return
+        if (res.status === 401) return opts.onError('session expired')
+        if (!res.ok) return opts.onError('transcription failed')
+        const { text } = (await res.json()) as { text?: string }
+        if (text?.trim() && session === me) opts.onFinal(text.trim())
+      } catch {
+        if (session === me) opts.onError('transcription failed')
+      }
+    }
+
+    // ponytail: fixed 8s segments can split words; upgrade: silence-based segmentation
+    const loop = () => {
+      if (session !== me) return
+      const r = new MediaRecorder(s, { mimeType })
+      rec = r
+      r.ondataavailable = (e) => session === me && upload(e.data)
+      r.onstop = loop // restart immediately; no-op after stop() since session changed
+      r.start()
+      setTimeout(() => r.state === 'recording' && r.stop(), SEG_MS)
+    }
+    loop()
   },
-  stop() {},
+  stop() {
+    const r = rec
+    const s = stream
+    session = null
+    rec = null
+    stream = null
+    if (r?.state === 'recording') r.stop()
+    s?.getTracks().forEach((t) => t.stop())
+  },
 }
