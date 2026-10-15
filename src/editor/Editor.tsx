@@ -21,7 +21,7 @@ export const Editor = forwardRef<EditorHandle, { initial: string; editable: bool
       extensions: [
         StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false }),
         Link.configure({ openOnClick: false }),
-        Markdown.configure({ transformPastedText: true }),
+        Markdown.configure({ transformPastedText: true, breaks: true }),
         PendingMark,
       ],
       content: initial,
