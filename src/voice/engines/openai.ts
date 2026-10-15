@@ -29,19 +29,24 @@ export const openai: Engine = {
     if (session !== me) return s.getTracks().forEach((t) => t.stop()) // stopped while awaiting permission
     stream = s
 
+    let dead = false // set on 401 so the stop() flush doesn't upload again
     const upload = async (blob: Blob) => {
-      if (blob.size < MIN_BYTES) return
+      if (dead || blob.size < MIN_BYTES) return
       const body = new FormData()
       body.append('file', blob, `chunk.${ext}`)
       body.append('prompt', opts.vocabulary().join(', ').split(/\s+/).slice(0, MAX_WORDS).join(' '))
       body.append('lang', opts.lang)
       try {
         const res = await fetch('/api/transcribe-openai', { method: 'POST', body })
-        if (session !== me) return
-        if (res.status === 401) return opts.onError('session expired')
-        if (!res.ok) return opts.onError('transcription failed')
+        if (res.status === 401) {
+          dead = true
+          opts.onError('session expired')
+          return openai.stop()
+        }
+        if (!res.ok) return session === me && opts.onError('transcription failed')
+        // Deliver even after stop(): the final flushed segment must not be lost.
         const { text } = (await res.json()) as { text?: string }
-        if (text?.trim() && session === me) opts.onFinal(text.trim())
+        if (text?.trim()) opts.onFinal(text.trim())
       } catch {
         if (session === me) opts.onError('transcription failed')
       }
@@ -52,7 +57,7 @@ export const openai: Engine = {
       if (session !== me) return
       const r = new MediaRecorder(s, { mimeType })
       rec = r
-      r.ondataavailable = (e) => session === me && upload(e.data)
+      r.ondataavailable = (e) => void upload(e.data)
       r.onstop = loop // restart immediately; no-op after stop() since session changed
       r.start()
       setTimeout(() => r.state === 'recording' && r.stop(), SEG_MS)

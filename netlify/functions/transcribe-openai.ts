@@ -7,7 +7,8 @@ export default async (req: Request): Promise<Response> => {
     const denied = requireAuth(req)
     if (denied) return denied
     if (req.method !== 'POST') return Response.json({ error: 'method not allowed' }, { status: 405 })
-    const form = await req.formData()
+    const form = await req.formData().catch(() => null)
+    if (!form) return Response.json({ error: 'bad form data' }, { status: 400 })
     const file = form.get('file')
     if (!(file instanceof File)) return Response.json({ error: 'file required' }, { status: 400 })
     const prompt = String(form.get('prompt') ?? '')
