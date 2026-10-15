@@ -34,7 +34,14 @@ export const webspeech: Engine = {
     r.continuous = true
     r.interimResults = true
     r.lang = opts.lang
+    let failures = 0 // consecutive errors with no result in between
+    const fail = (msg: string) => {
+      opts.onError(msg)
+      webspeech.stop()
+    }
     r.onresult = (e) => {
+      if (rec !== r) return
+      failures = 0
       let interim = ''
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const text = e.results[i][0].transcript
@@ -45,10 +52,11 @@ export const webspeech: Engine = {
       opts.onInterim(interim)
     }
     r.onerror = (e) => {
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-        opts.onError('Microphone access was denied')
-        if (rec === r) webspeech.stop()
-      } // no-speech / aborted / network etc: onend restarts
+      if (rec !== r) return
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') return fail('Microphone access was denied')
+      if (e.error === 'audio-capture') return fail('No microphone found')
+      // no-speech is just silence and must not count, or a quiet user gets cut off; others (network...) restart via onend
+      if (e.error !== 'no-speech' && ++failures >= 5) fail('speech recognition keeps failing')
     }
     // Chrome ends sessions on silence/timeouts; keep restarting until stop(). Identity check ignores stale recognizers.
     r.onend = () => {
@@ -57,7 +65,10 @@ export const webspeech: Engine = {
         if (rec !== r) return
         try {
           r.start()
-        } catch {} // InvalidStateError "already started" is harmless
+        } catch (err) {
+          // "already started" InvalidStateError is harmless; anything else is fatal
+          if ((err as Error).name !== 'InvalidStateError') fail((err as Error).message)
+        }
       }, 250)
     }
     r.start()

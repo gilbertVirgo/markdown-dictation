@@ -37,7 +37,7 @@ export function useTranscriber(opts: { engine: EngineName; lang: string; vocabul
     ENGINES[engine]
       .start({
         lang,
-        vocabulary: latest.current.vocabulary(),
+        vocabulary: () => latest.current.vocabulary(),
         onFinal(text) {
           setInterim('')
           if (!mutedRef.current) latest.current.onFinal(text)

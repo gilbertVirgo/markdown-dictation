@@ -5,11 +5,14 @@ import { isSupported } from './engines/webspeech'
 
 export type Settings = { engine: EngineName; refine: boolean; lang: string }
 const KEY = 'dictate.settings'
+const ENGINE_NAMES: EngineName[] = ['webspeech', 'openai', 'deepgram']
 const DEFAULTS: Settings = { engine: 'webspeech', refine: true, lang: 'en-GB' }
 
 export function loadSettings(): Settings {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') }
+    const s: Settings = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') }
+    if (!ENGINE_NAMES.includes(s.engine)) s.engine = DEFAULTS.engine
+    return s
   } catch {
     return DEFAULTS
   }
