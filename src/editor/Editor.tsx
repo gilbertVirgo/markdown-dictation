@@ -37,7 +37,7 @@ export const Editor = forwardRef<EditorHandle, { initial: string; editable: bool
       getMarkdown: () => (editor ? md(editor) : initial),
       insertChunk(text, block, pendingId) {
         if (!editor) return
-        const content = [{ type: 'text', text, marks: [{ type: 'pending', attrs: { id: pendingId } }] }]
+        const content = [{ type: 'text', text, marks: [{ type: 'pending', attrs: { id: pendingId, block } }] }]
         const node =
           block === 'body' ? { type: 'paragraph', content }
           : block === 'quote' ? { type: 'blockquote', content: [{ type: 'paragraph', content }] }
@@ -54,8 +54,29 @@ export const Editor = forwardRef<EditorHandle, { initial: string; editable: bool
         const r = pendingRange(editor, pendingId)
         if (!r) return
         const type = editor.schema.marks.pending
-        const tr = editor.state.tr.insertText(text, r.from, r.to)
-        editor.view.dispatch(tr.removeMark(r.from, r.from + text.length, type))
+        if (!text.trim()) {
+          editor.view.dispatch(editor.state.tr.removeMark(r.from, r.to, type)) // keep raw text
+          return
+        }
+        if (!text.includes('\n')) {
+          const tr = editor.state.tr.insertText(text, r.from, r.to)
+          editor.view.dispatch(tr.removeMark(r.from, r.from + text.length, type))
+          return
+        }
+        // multi-line: replace the whole enclosing block with parsed markdown (tiptap-markdown parses strings here)
+        const { doc } = editor.state
+        const $from = doc.resolve(r.from), $to = doc.resolve(r.to)
+        const quote = r.block === 'quote'
+        const depth = ($p: typeof $from) => {
+          if (quote) for (let d = $p.depth; d > 0; d--) if ($p.node(d).type.name === 'blockquote') return d
+          return $p.depth
+        }
+        const lines = text.split('\n')
+        const markdown =
+          quote ? lines.map((l) => (l ? '> ' + l : '>')).join('\n')
+          : r.block === 'body' ? text
+          : '#'.repeat(Number(r.block[1])) + ' ' + text
+        editor.chain().insertContentAt({ from: $from.before(depth($from)), to: $to.after(depth($to)) }, markdown).run()
       },
       clearPending(pendingId) {
         if (!editor) return
@@ -78,13 +99,15 @@ const md = (editor: TiptapEditor): string =>
   (editor.storage as unknown as { markdown: { getMarkdown(): string } }).markdown.getMarkdown()
 
 // span of all text carrying pending mark `id` (onUpdate fires on dispatch, so onChange runs)
-function pendingRange(editor: TiptapEditor, id: string): { from: number; to: number } | null {
-  let from = Infinity, to = -1
+function pendingRange(editor: TiptapEditor, id: string): { from: number; to: number; block: BlockType } | null {
+  let from = Infinity, to = -1, block: BlockType = 'body'
   editor.state.doc.descendants((node, pos) => {
-    if (node.isText && node.marks.some((m) => m.type.name === 'pending' && m.attrs.id === id)) {
+    const m = node.isText && node.marks.find((m) => m.type.name === 'pending' && m.attrs.id === id)
+    if (m) {
       from = Math.min(from, pos)
       to = Math.max(to, pos + node.nodeSize)
+      block = m.attrs.block ?? 'body'
     }
   })
-  return to < 0 ? null : { from, to }
+  return to < 0 ? null : { from, to, block }
 }
