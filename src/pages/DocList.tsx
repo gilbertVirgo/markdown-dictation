@@ -1,0 +1,62 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
+import { api } from '../lib/api'
+
+type Item = { id: string; title: string; updatedAt: string }
+
+const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+function ago(iso: string) {
+  const s = (new Date(iso).getTime() - Date.now()) / 1000
+  for (const [unit, n] of [['day', 86400], ['hour', 3600], ['minute', 60]] as const)
+    if (Math.abs(s) >= n) return rtf.format(Math.round(s / n), unit)
+  return rtf.format(0, 'second')
+}
+
+export default function DocList() {
+  const [docs, setDocs] = useState<Item[] | null>(null)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    api<{ docs: Item[] }>('/docs').then((r) => setDocs(r.docs), () => setDocs([]))
+  }, [])
+
+  async function create() {
+    const { id } = await api<{ id: string }>('/docs', { method: 'POST' })
+    navigate(`/doc/${id}`)
+  }
+
+  async function remove(d: Item) {
+    if (!confirm(`Delete "${d.title}"?`)) return
+    await api('/docs/' + d.id, { method: 'DELETE' })
+    setDocs((x) => x?.filter((i) => i.id !== d.id) ?? null)
+  }
+
+  return (
+    <main className="min-h-dvh bg-bg text-fg pb-28">
+      {docs?.length === 0 && <p className="p-8 text-center text-muted">No documents yet. Tap + to start dictating.</p>}
+      <ul>
+        {docs?.map((d) => (
+          <li key={d.id} className="flex items-center min-h-14 border-b border-border">
+            <button onClick={() => navigate(`/doc/${d.id}`)} className="flex-1 min-h-14 px-4 text-left min-w-0">
+              <div className="truncate">{d.title}</div>
+              <div className="text-sm text-muted">{ago(d.updatedAt)}</div>
+            </button>
+            <button onClick={() => remove(d)} aria-label="Delete" className="min-h-14 w-14 text-muted">
+              <svg viewBox="0 0 24 24" className="mx-auto size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+              </svg>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button
+        onClick={create}
+        aria-label="New document"
+        className="fixed right-4 size-14 rounded-full bg-primary text-white text-3xl shadow-lg"
+        style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+      >
+        +
+      </button>
+    </main>
+  )
+}
