@@ -14,6 +14,7 @@ function ago(iso: string) {
 
 export default function DocList() {
   const [docs, setDocs] = useState<Item[] | null>(null)
+  const [creating, setCreating] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -21,8 +22,13 @@ export default function DocList() {
   }, [])
 
   async function create() {
-    const { id } = await api<{ id: string }>('/docs', { method: 'POST' })
-    navigate(`/doc/${id}`)
+    setCreating(true)
+    try {
+      const { id } = await api<{ id: string }>('/docs', { method: 'POST' })
+      navigate(`/doc/${id}`)
+    } finally {
+      setCreating(false)
+    }
   }
 
   async function remove(d: Item) {
@@ -51,8 +57,9 @@ export default function DocList() {
       </ul>
       <button
         onClick={create}
+        disabled={creating}
         aria-label="New document"
-        className="fixed right-4 size-14 rounded-full bg-primary text-white text-3xl shadow-lg"
+        className="fixed right-4 size-14 rounded-full bg-primary text-white text-3xl shadow-lg disabled:opacity-50"
         style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
       >
         +

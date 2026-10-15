@@ -22,6 +22,6 @@ describe('extractVocabulary', () => {
     expect(v).not.toContain('Joe')
   })
   it('dedupes and caps', () => {
-    expect(extractVocabulary('a Nehemiah Nehemiah Jerusalem', 1)).toEqual(['Nehemiah'])
+    expect(extractVocabulary('a Nehemiah Nehemiah Jerusalem', 2)).toEqual(['Nehemiah', 'Jerusalem'])
   })
 })

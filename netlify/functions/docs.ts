@@ -5,12 +5,22 @@ import { requireAuth } from './_lib/session'
 
 export const config = { path: ['/api/docs', '/api/docs/:id'] }
 
+const noMethod = () => Response.json({ error: 'method not allowed' }, { status: 405 })
+
 export default async (req: Request): Promise<Response> => {
+  try {
+    return await handle(req)
+  } catch (e) {
+    return Response.json({ error: String((e as Error)?.message ?? e) }, { status: 500 })
+  }
+}
+
+async function handle(req: Request): Promise<Response> {
   const denied = requireAuth(req)
   if (denied) return denied
   const seg = new URL(req.url).pathname.split('/').filter(Boolean)
   const idStr = seg[2]
-  if (idStr && !ObjectId.isValid(idStr)) return Response.json({ error: "bad id" }, { status: 400 })
+  if (idStr && !/^[0-9a-f]{24}$/.test(idStr)) return Response.json({ error: "bad id" }, { status: 400 })
   const col = await docs()
 
   if (!idStr) {
@@ -22,7 +32,7 @@ export default async (req: Request): Promise<Response> => {
       const { insertedId } = await col.insertOne({ title: 'Untitled', markdown: '', updatedAt: new Date() } as never)
       return Response.json({ id: String(insertedId) })
     }
-    return new Response(null, { status: 405 })
+    return noMethod()
   }
 
   const _id = new ObjectId(idStr)
@@ -45,5 +55,5 @@ export default async (req: Request): Promise<Response> => {
     await col.deleteOne({ _id })
     return Response.json({ ok: true })
   }
-  return new Response(null, { status: 405 })
+  return noMethod()
 }
