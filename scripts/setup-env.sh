@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 push() {
   netlify status >/dev/null 2>&1 || netlify link
   for k in ANTHROPIC_API_KEY OPENAI_API_KEY DEEPGRAM_API_KEY MONGODB_URI APP_PASSWORD SESSION_SECRET; do
-    netlify env:set "$k" "${!k}" --secret --context production >/dev/null && echo "netlify env: $k set"
+    netlify env:set "$k" "${!k}" --secret --context production </dev/null >/dev/null && echo "netlify env: $k set"
   done
 }
 
