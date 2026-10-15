@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { applySpokenCommands } from '../lib/spokenCommands'
 import { useNavigate, useParams } from 'react-router'
 import { api } from '../lib/api'
 import { deriveTitle, extractVocabulary } from '../lib/markdown'
@@ -52,10 +53,11 @@ export default function DocPage() {
     if (!ed) return
     const documentMarkdown = ed.getMarkdown() // before insert, so the raw chunk isn't its own context
     const id = crypto.randomUUID()
-    ed.insertChunk(text, block, id)
+    const processed = applySpokenCommands(text)
+    ed.insertChunk(processed, block, id)
     // editor isn't focusable in voice mode, so bring the new text into view ourselves
     if (modeRef.current === 'voice') requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }))
-    if (!refine.current) return ed.clearPending(id)
+    if (!refine.current) return ed.replacePending(id, processed)
     api<{ text: string }>('/refine', { method: 'POST', body: JSON.stringify({ documentMarkdown, chunk: text, block }) }).then(
       (r) => editor.current?.replacePending(id, r.text),
       () => editor.current?.clearPending(id),
