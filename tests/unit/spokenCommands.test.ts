@@ -14,6 +14,7 @@ describe('applySpokenCommands', () => {
   it('leaves words containing commands alone', () => {
     expect(f('the commander said colonel')).toBe('the commander said colonel')
     expect(f('a periodic table')).toBe('a periodic table')
+    expect(f('the period of time')).toBe('the period of time')
   })
   it('trims', () => expect(f('  hi new line  ')).toBe('hi'))
 })
