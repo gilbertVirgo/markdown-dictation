@@ -1,4 +1,6 @@
+import type { ReactNode } from 'react'
 import { useEditorState, type Editor } from '@tiptap/react'
+import { Link, List, Quote } from '../ui/icons'
 
 export default function Toolbar({ editor }: { editor: Editor }) {
   const active = useEditorState({
@@ -24,19 +26,19 @@ export default function Toolbar({ editor }: { editor: Editor }) {
   }
 
   const c = () => editor.chain().focus()
-  const buttons: [keyof typeof active, string, () => void][] = [
+  const buttons: [keyof typeof active, ReactNode, () => void][] = [
     ['bold', 'B', () => c().toggleBold().run()],
     ['italic', 'I', () => c().toggleItalic().run()],
-    ['link', 'Link', link],
+    ['link', <Link className="mx-auto size-5" />, link],
     ['h1', 'H1', () => c().toggleHeading({ level: 1 }).run()],
     ['h2', 'H2', () => c().toggleHeading({ level: 2 }).run()],
     ['h3', 'H3', () => c().toggleHeading({ level: 3 }).run()],
-    ['quote', '❝', () => c().toggleBlockquote().run()],
-    ['bullet', '•', () => c().toggleBulletList().run()],
+    ['quote', <Quote className="mx-auto size-5" />, () => c().toggleBlockquote().run()],
+    ['bullet', <List className="mx-auto size-5" />, () => c().toggleBulletList().run()],
   ]
 
   return (
-    <div className="sticky bottom-0 z-10 flex overflow-x-auto border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]">
+    <div className="flex shrink-0 overflow-x-auto border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]">
       {buttons.map(([k, label, run]) => (
         <button
           key={k}
