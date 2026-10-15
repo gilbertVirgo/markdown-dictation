@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { EditorContent, useEditor, type Editor as TiptapEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -10,9 +10,10 @@ import type { BlockType } from '../lib/refinePrompt'
 export type { BlockType } from '../lib/refinePrompt'
 export type EditorHandle = {
   getMarkdown(): string
-  insertChunk(text: string, block: BlockType, pendingId: string): void
+  insertChunk(text: string, block: BlockType, pendingId: string): boolean
   replacePending(pendingId: string, text: string): void
   clearPending(pendingId: string): void
+  scrollToEnd(): void
 }
 
 // Shared with tests/unit/editor.test.ts so both build the same schema.
@@ -31,6 +32,7 @@ export const Editor = forwardRef<EditorHandle, { initial: string; editable: bool
       editable,
       onUpdate: ({ editor }) => onChange(getMarkdown(editor)),
     })
+    const scroller = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
       editor?.setEditable(editable, false)
@@ -38,14 +40,18 @@ export const Editor = forwardRef<EditorHandle, { initial: string; editable: bool
 
     useImperativeHandle(ref, () => ({
       getMarkdown: () => (editor ? getMarkdown(editor) : initial),
-      insertChunk: (text, block, pendingId) => editor && insertChunk(editor, text, block, pendingId),
+      insertChunk: (text, block, pendingId) => !!editor && insertChunk(editor, text, block, pendingId),
       replacePending: (pendingId, text) => editor && replacePending(editor, pendingId, text),
       clearPending: (pendingId) => editor && clearPending(editor, pendingId),
+      scrollToEnd: () => scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' }),
     }), [editor, initial])
 
     return (
       <>
-        <EditorContent editor={editor} className="px-4 py-4" />
+        {/* only this scrolls; the toolbar below stays pinned above the keyboard */}
+        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto [scroll-padding-bottom:3rem]">
+          <EditorContent editor={editor} className="px-4 py-4" />
+        </div>
         {editable && editor && <Toolbar editor={editor} />}
       </>
     )
@@ -57,7 +63,9 @@ export const getMarkdown = (editor: TiptapEditor): string =>
   (editor.storage as unknown as { markdown: { getMarkdown(): string } }).markdown.getMarkdown()
 
 // Body text continues the last paragraph; anything else (or a picked block type) starts a new block.
-export function insertChunk(editor: TiptapEditor, text: string, block: BlockType, pendingId: string) {
+// Returns false (nothing inserted) for blank text: ProseMirror rejects empty text nodes.
+export function insertChunk(editor: TiptapEditor, text: string, block: BlockType, pendingId: string): boolean {
+  if (!text.trim() && !text.includes('\n')) return false
   const content = [{ type: 'text', text, marks: [{ type: 'pending', attrs: { id: pendingId, block } }] }]
   const { doc } = editor.state
   const last = doc.lastChild
@@ -65,7 +73,7 @@ export function insertChunk(editor: TiptapEditor, text: string, block: BlockType
   if (block === 'body' && last?.type.name === 'paragraph' && last.content.size > 0) {
     const sep = /\s$/.test(last.textContent) || last.lastChild?.type.name === 'hardBreak' ? [] : [{ type: 'text', text: ' ' }]
     editor.commands.insertContentAt(end - 1, [...sep, ...content])
-    return
+    return true
   }
   const node =
     block === 'body' ? { type: 'paragraph', content }
@@ -74,6 +82,7 @@ export function insertChunk(editor: TiptapEditor, text: string, block: BlockType
   // replace the empty trailing paragraph (StarterKit TrailingNode) instead of appending after it
   const from = last?.type.name === 'paragraph' && last.content.size === 0 ? end - last.nodeSize : end
   editor.commands.insertContentAt({ from, to: end }, node)
+  return true
 }
 
 const BLOCK_START = /^\s*([-*+] |\d+\. |#{1,6} |> )/
@@ -87,7 +96,17 @@ export function replacePending(editor: TiptapEditor, pendingId: string, raw: str
   const { schema } = editor
   const type = schema.marks.pending
   if (!raw.trim()) {
-    editor.view.dispatch(editor.state.tr.removeMark(r.from, r.to, type)) // keep raw text
+    if (!raw.includes('\n')) {
+      editor.view.dispatch(editor.state.tr.removeMark(r.from, r.to, type)) // keep raw text
+      return
+    }
+    // bare "new line" / "new paragraph": swap the pending text (and insertChunk's separator) for a real break
+    let from = r.from
+    if (editor.state.doc.textBetween(from - 1, from) === ' ') from--
+    const tr = editor.state.tr.delete(from, r.to)
+    if (/\n\s*\n/.test(raw)) tr.split(from)
+    else tr.insert(from, schema.nodes.hardBreak.create())
+    editor.view.dispatch(tr)
     return
   }
   if (!HAS_MARKDOWN.test(raw)) {
