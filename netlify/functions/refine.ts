@@ -29,7 +29,7 @@ export default async (req: Request): Promise<Response> => {
       return Response.json({ error: String((e as Error)?.message ?? e) }, { status: 502 })
     }
     if (msg.stop_reason === 'refusal') return Response.json({ error: 'refused' }, { status: 502 })
-    const text = msg.content.map((b) => (b.type === 'text' ? b.text : '')).join('').trim()
+    const text = msg.content.map((b) => (b.type === 'text' ? b.text : '')).join('').replace(/^[ \t]+|[ \t]+$/g, '') // keep edge \n: "new paragraph" at a chunk end
     return Response.json(msg.stop_reason === 'max_tokens' ? { text, truncated: true } : { text })
   } catch (e) {
     return Response.json({ error: String((e as Error)?.message ?? e) }, { status: 500 })
