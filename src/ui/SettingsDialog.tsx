@@ -18,13 +18,13 @@ export function SettingsDialog({ ref, settings, update }: {
         if (langInput.current) langInput.current.value = lang // show the normalised value next time
         if (lang !== settings.lang) update({ lang })
       }}
-      className="inset-x-4 m-auto w-auto max-w-none rounded-3xl border-[0.5px] border-fg bg-bg p-0 text-fg backdrop:bg-transparent sm:max-w-sm"
+      className="inset-x-4 m-auto w-auto max-w-none bg-c200 p-0 text-ink backdrop:bg-[rgb(46_36_28/0.3)] sm:max-w-sm"
     >
       <form method="dialog" className="flex flex-col gap-4 p-4">
-        <h2 className="text-lg font-semibold">Settings</h2>
+        <h2 className="t-big text-[40px]">Settings</h2>
         <div className="flex flex-col gap-1">
-          Text size
-          <div role="radiogroup" aria-label="Text size" className="flex">
+          <span className="t-small text-mute">Text size</span>
+          <div role="radiogroup" aria-label="Text size" className="flex bg-c100">
             {SIZES.map((s) => (
               <button
                 key={s}
@@ -32,7 +32,7 @@ export function SettingsDialog({ ref, settings, update }: {
                 role="radio"
                 aria-checked={settings.size === s}
                 onClick={() => update({ size: s })}
-                className={`min-h-11 flex-1 border-[0.5px] border-l-0 border-fg capitalize first:rounded-l-lg first:border-l-[0.5px] last:rounded-r-lg ${settings.size === s ? 'bg-fg font-semibold text-bg' : ''}`}
+                className={`t-small min-h-11 flex-1 ${settings.size === s ? 'bg-ink text-c50' : 'text-ink'}`}
               >
                 {s}
               </button>
@@ -40,11 +40,11 @@ export function SettingsDialog({ ref, settings, update }: {
           </div>
         </div>
         <label className="flex flex-col gap-1">
-          Voice engine
+          <span className="t-small text-mute">Voice engine</span>
           <select
             value={settings.engine}
             onChange={(e) => update({ engine: e.target.value as EngineName })}
-            className="min-h-11 rounded-lg border-[0.5px] border-fg bg-bg px-3"
+            className="min-h-11 bg-c50 pl-3 text-ink"
           >
             <option value="deepgram">Deepgram</option>
             <option value="webspeech">Browser (Web Speech)</option>
@@ -52,14 +52,14 @@ export function SettingsDialog({ ref, settings, update }: {
           </select>
         </label>
         <label className="flex min-h-11 items-center gap-3">
-          <input type="checkbox" checked={settings.refine} onChange={(e) => update({ refine: e.target.checked })} className="size-5 accent-primary" />
-          Refine with Claude
+          <input type="checkbox" checked={settings.refine} onChange={(e) => update({ refine: e.target.checked })} className="size-5 accent-hot" />
+          <span className="t-small">Refine with Claude</span>
         </label>
         <label className="flex flex-col gap-1">
-          Language
-          <input ref={langInput} defaultValue={settings.lang} className="min-h-11 rounded-lg border-[0.5px] border-fg bg-bg px-3" />
+          <span className="t-small text-mute">Language</span>
+          <input ref={langInput} defaultValue={settings.lang} className="min-h-11 bg-c50 px-3 text-ink" />
         </label>
-        <button className="min-h-11 rounded-lg bg-primary font-semibold text-bg">Done</button>
+        <button className="t-small min-h-11 bg-ink text-c50">Done</button>
       </form>
     </dialog>
   )

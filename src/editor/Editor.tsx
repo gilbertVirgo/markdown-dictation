@@ -45,7 +45,7 @@ export const Editor = forwardRef<EditorHandle, { initial: string; onChange(md: s
       <>
         {/* only this scrolls; the toolbar below stays pinned above the keyboard */}
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto [scroll-padding-bottom:3rem]">
-          <EditorContent editor={editor} className="px-4 py-4" />
+          <EditorContent editor={editor} className="rise mx-auto w-full max-w-[42rem] px-4 py-4 lg:px-8 lg:py-10" />
         </div>
         {editor && <Toolbar editor={editor} />}
       </>

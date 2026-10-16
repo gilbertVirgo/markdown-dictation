@@ -15,6 +15,7 @@ export function useTranscriber(opts: {
   onLevel?(level: number): void // 0..1 mic input level, per animation frame
 }): {
   live: boolean
+  connecting: boolean
   interim: string
   error: string | null
   start(): void
@@ -22,6 +23,7 @@ export function useTranscriber(opts: {
 } {
   const { engine, lang } = opts
   const [live, setLive] = useState(false)
+  const [connecting, setConnecting] = useState(false)
   const [interim, setInterim] = useState('')
   const [error, setError] = useState<string | null>(null)
   const call = useRef(0) // bumped per start()/stop() so a superseded start's callbacks are ignored
@@ -42,6 +44,7 @@ export function useTranscriber(opts: {
     ENGINES[engine].stop()
     stopMeter()
     setLive(false)
+    setConnecting(false)
     setInterim('')
   }, [engine, stopMeter])
 
@@ -49,6 +52,7 @@ export function useTranscriber(opts: {
     const me = ++call.current
     let failed = false
     setError(null)
+    setConnecting(true)
     stopMeter()
     // created synchronously inside the tap so iOS Safari lets it run
     const ctx = typeof AudioContext === 'undefined' ? null : new AudioContext()
@@ -89,16 +93,17 @@ export function useTranscriber(opts: {
           ENGINES[engine].stop()
           stopMeter()
           setLive(false)
+          setConnecting(false)
         },
       })
       .then(
-        () => call.current === me && setLive(!failed),
-        (e: Error) => call.current === me && (setError(e.message), stopMeter(), setLive(false)),
+        () => call.current === me && (setConnecting(false), setLive(!failed)),
+        (e: Error) => call.current === me && (setConnecting(false), setError(e.message), stopMeter(), setLive(false)),
       )
   }, [engine, lang, stopMeter])
 
   // stop on unmount, and stop the old engine when the engine changes (stop is recreated)
   useEffect(() => () => stop(), [stop])
 
-  return { live, interim, error, start, stop }
+  return { live, connecting, interim, error, start, stop }
 }

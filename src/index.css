@@ -1,45 +1,80 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --color-primary: var(--primary);
-  --color-bg: var(--bg);
-  --color-fg: var(--fg);
+  --font-sans: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-serif: "EB Garamond", Georgia, serif;
+  --color-c50: var(--c50);
+  --color-c100: var(--c100);
+  --color-c200: var(--c200);
+  --color-c300: var(--c300);
+  --color-ink: var(--ink);
+  --color-mute: var(--mute);
+  --color-hot: var(--hot);
+  --color-hot-text: var(--hot-text);
+  --color-on-hot: var(--on-hot);
 }
 
-:root { --bg: #fefefe; --fg: #1c1c1c; --primary: #0000ff; }
+/* sand + tangerine; every text/fill pair is WCAG AA (see spec) */
+:root { --c50: #F8F5F1; --c100: #EEE7DF; --c200: #E0D4C6; --c300: #C9B49E; --ink: #2E241C; --mute: #665443; --hot: #F2701F; --hot-text: #98440C; --on-hot: #2E241C; --ease: cubic-bezier(.22, 1, .36, 1); }
 @media (prefers-color-scheme: dark) {
-  /* #0000ff is ~2.3:1 on #1c1c1c; #7373ff is ~4.5:1 */
-  :root { --bg: #1c1c1c; --fg: #fefefe; --primary: #7373ff; }
+  :root { --c50: #161310; --c100: #1F1B17; --c200: #2C261F; --c300: #4D4237; --ink: #F1EBE4; --mute: #A8998A; --hot-text: #F2701F; }
 }
+
+/* two UI sizes only: BIG and small */
+@utility t-big { font-weight: 800; letter-spacing: -0.035em; line-height: 0.95; }
+@utility t-small { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.3; }
 
 html, body, #root { height: 100%; }
-body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+body { background: var(--c50); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+
+@layer base {
+  select {
+    appearance: none; padding-right: 2.25rem;
+    background: var(--c50) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238E7B69' stroke-width='1.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 0.75rem center / 1rem;
+  }
+}
 
 /* Document typesetting: size, tracking and leading scale with Settings > Text size (data-size on DocPage) */
 .ProseMirror {
-  --doc-size: 1.25rem; --doc-track: -0.005em; --doc-head-track: -0.02em;
+  --doc-size: 1.25rem; --doc-track: -0.005em;
   min-height: 60vh; outline: none;
-  font-family: "Libertinus Math", "Libertinus Serif", Georgia, serif;
+  font-family: var(--font-serif);
   font-size: var(--doc-size); line-height: 1.55; letter-spacing: var(--doc-track);
-  font-kerning: normal; font-synthesis: none; hanging-punctuation: first; -webkit-font-smoothing: antialiased;
+  font-kerning: normal; font-synthesis: none; hanging-punctuation: first;
 }
-/* Libertinus Math has one regular face; real bold/italic come from Libertinus Serif */
-.ProseMirror :is(h1, h2, h3, strong, em, blockquote) { font-family: "Libertinus Serif", Georgia, serif; }
-[data-size="small"] .ProseMirror { --doc-size: 1.05rem; --doc-track: 0; --doc-head-track: -0.015em; }
-[data-size="large"] .ProseMirror { --doc-size: 1.45rem; --doc-track: -0.01em; --doc-head-track: -0.025em; }
-.ProseMirror :is(h1, h2, h3) { line-height: 1.2; letter-spacing: var(--doc-head-track); text-wrap: balance; margin: 0.75em 0 0.4em; }
-.ProseMirror h1 { font-size: 2em; font-weight: 700; }
-.ProseMirror h2 { font-size: 1.5em; font-weight: 700; }
-.ProseMirror h3 { font-size: 1.25em; font-weight: 600; }
+[data-size="small"] .ProseMirror { --doc-size: 1.05rem; --doc-track: 0; }
+[data-size="large"] .ProseMirror { --doc-size: 1.45rem; --doc-track: -0.01em; }
+/* headings are Bricolage; the doc's first H1 is the page's BIG title */
+.ProseMirror :is(h1, h2, h3) { font-family: var(--font-sans); font-weight: 800; letter-spacing: -0.035em; line-height: 0.95; text-wrap: balance; margin: 0.9em 0 0.4em; }
+.ProseMirror h1 { font-size: 1.75em; }
+.ProseMirror > h1:first-child { font-size: 2em; margin-top: 0.2em; }
+@media (min-width: 1024px) { .ProseMirror > h1:first-child { font-size: 2.6em; } }
+.ProseMirror h2 { font-size: 1.4em; }
+.ProseMirror h3 { font-size: 1.15em; }
 .ProseMirror p { text-wrap: pretty; margin: 0.75em 0; }
-.ProseMirror blockquote { border-left: 0.5px solid var(--color-primary); padding-left: 0.75em; color: var(--fg); font-style: italic; }
+.ProseMirror blockquote { background: var(--c100); padding: 0.5em 0.9em; margin: 0.75em 0; font-style: italic; }
 .ProseMirror ul { list-style: disc; padding-left: 1.25em; }
 .ProseMirror ol { list-style: decimal; padding-left: 1.25em; }
 .ProseMirror li p { margin: 0.25em 0; }
-.ProseMirror a { color: var(--color-primary); text-decoration: underline; }
+.ProseMirror a { color: var(--hot-text); text-decoration: underline; }
+/* dictated chunk waiting on Claude: pulses until replaced */
+.ProseMirror [data-pending] { animation: pending 1.4s ease-in-out infinite; }
 
-/* palette: no browser-default blue focus ring or grey placeholder */
-:focus-visible { outline: 1px solid var(--color-primary); outline-offset: -1px; } /* sits on the element's own border: one line, not two */
+:focus-visible { outline: 2px solid var(--hot-text); outline-offset: 2px; }
 .ProseMirror:focus-visible { outline: none; }
-::placeholder { color: var(--fg); opacity: 1; }
+::placeholder { color: var(--mute); opacity: 1; }
+
+/* motion: ease-out translateY + opacity only */
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes hop { 0%, 60%, 100% { transform: none; } 30% { transform: translateY(-4px); } }
+@keyframes step { 0%, 100% { background: var(--c200); } 33% { background: var(--c300); } 66% { background: var(--c50); } }
+@keyframes pending { 50% { opacity: 0.7; } }
+@keyframes breathe { 50% { background: var(--hot); color: var(--on-hot); } }
+.rise { animation: rise 0.4s var(--ease) both; }
+.hop > span { display: inline-block; white-space: pre; animation: hop 1s var(--ease) infinite; }
+.breathe { animation: breathe 1s ease-in-out infinite; }
+.loader-bar { height: 1.5rem; margin-bottom: 0.5rem; background: var(--c200); animation: step 1.2s steps(1) infinite; }
+dialog[open] { animation: rise 0.36s var(--ease); }
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after { animation: none !important; transition: none !important; }
+}

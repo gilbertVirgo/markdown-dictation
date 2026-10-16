@@ -35,33 +35,39 @@ export function VoicePanel({ onChunk, vocabulary, settings }: {
     ? 'Speech recognition isn’t supported in this browser. Try Chrome or Safari, or pick another engine.'
     : t.error
 
-  return (
-    <div className="flex shrink-0 flex-col items-center gap-3 border-t-[0.5px] border-fg bg-bg px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-      <p className="min-h-6 w-full truncate text-center text-fg italic" aria-live="polite">
-        {notice ?? (t.interim || (t.live ? 'Listening…' : 'Tap to dictate'))}
-      </p>
+  const status = notice ? 'Mic error' : t.connecting ? 'Connecting' : t.live ? 'Listening' : 'Tap to dictate'
 
-      <div className="relative my-2 size-18">
-        {/* level ring: solid circle behind the button, only transform animates */}
-        <span ref={ring} aria-hidden className="pointer-events-none absolute inset-0 rounded-full bg-primary transition-transform duration-75" />
-        <button
-          onClick={t.live ? t.stop : t.start}
-          aria-label={t.live ? 'Stop microphone' : 'Start microphone'}
-          aria-pressed={t.live}
-          className={`relative flex size-full items-center justify-center rounded-full border-[0.5px] ${t.live ? 'border-primary bg-primary text-bg' : 'border-fg bg-bg text-fg'}`}
-        >
-          <Mic className="size-8" />
-        </button>
+  return (
+    // two tiers: mic + transcript, then the next-block picker
+    <div className="shrink-0 bg-c100 pb-[env(safe-area-inset-bottom)]">
+      <div className="flex items-center gap-5 bg-c200 px-4 py-4 lg:px-8">
+        <div className="relative size-15 shrink-0 lg:size-13">
+          {/* level ring: square behind the button, only transform animates */}
+          <span ref={ring} aria-hidden className="pointer-events-none absolute inset-0 bg-hot/30 transition-transform duration-75" />
+          <button
+            onClick={t.live || t.connecting ? t.stop : t.start}
+            aria-label={t.live || t.connecting ? 'Stop microphone' : 'Start microphone'}
+            aria-pressed={t.live || t.connecting}
+            className={`relative flex size-full items-center justify-center ${t.live ? 'bg-hot text-on-hot' : t.connecting ? 'breathe bg-c300 text-ink' : 'bg-c50 text-ink'}`}
+          >
+            <Mic className="size-7" />
+          </button>
+        </div>
+        <div className="min-w-0 flex-1" aria-live="polite">
+          <p className="t-small text-mute">{status}</p>
+          <p className={`min-h-7 font-serif text-lg italic ${notice ? 'text-hot-text' : 'truncate text-mute'}`}>{notice ?? t.interim}</p>
+        </div>
       </div>
 
-      <div className="grid w-full grid-cols-5" role="radiogroup" aria-label="Next block type">
+      <div role="radiogroup" aria-label="Next block type" className="flex items-center px-4 lg:px-8">
+        <span aria-hidden className="t-small mr-3 shrink-0 text-mute">Next block</span>
         {BLOCKS.map(([b, label]) => (
           <button
             key={b}
             role="radio"
             aria-checked={pendingBlock === b}
             onClick={() => pick(b)}
-            className={`min-h-14 border-[0.5px] border-l-0 border-fg font-semibold first:rounded-l-lg first:border-l-[0.5px] last:rounded-r-lg ${pendingBlock === b ? 'bg-fg text-bg' : ''}`}
+            className={`t-small min-h-11 flex-1 px-3.5 sm:flex-none ${pendingBlock === b ? 'bg-ink text-c50' : 'text-mute hover:text-ink'}`}
           >
             {label}
           </button>
