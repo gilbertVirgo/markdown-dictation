@@ -21,6 +21,7 @@ export default function DocPage() {
   const navigate = useNavigate()
   const [doc, setDoc] = useState<Doc | null>(null)
   const [failed, setFailed] = useState(false)
+  const [refineError, setRefineError] = useState<string | null>(null)
   const editor = useRef<EditorHandle>(null)
   // Latest markdown kept in a ref so unmount flush works after the editor ref is detached.
   const latest = useRef('')
@@ -86,8 +87,9 @@ export default function DocPage() {
     // command-only chunk ("new line new line"): nothing for Claude to fix, and it narrates instead of answering
     if (!refine.current || !processed.trim()) return ed.replacePending(id, processed)
     api<{ text: string }>('/refine', { method: 'POST', body: JSON.stringify({ documentMarkdown, chunk: text, block, placement }) }).then(
-      (r) => editor.current?.replacePending(id, r.text),
-      () => editor.current?.clearPending(id),
+      (r) => (setRefineError(null), editor.current?.replacePending(id, r.text)),
+      // keep the raw text, but say so: otherwise it just looks like missing capitals/punctuation
+      (e: Error) => (setRefineError(e.message), editor.current?.clearPending(id)),
     )
   }, [])
 
@@ -143,6 +145,11 @@ export default function DocPage() {
           <span key={status} className={`t-small rise px-3 lg:ml-auto ${status === 'error' ? 'text-hot-text' : 'text-mute'}`}>
             {status === 'saving' ? <>Saving<Dots /></> : STATUS[status]}
           </span>
+          {refineError && (
+            <span role="alert" title={refineError} className="t-small min-w-0 line-clamp-2 break-words px-3 text-hot-text">
+              Refine failed: {refineError}
+            </span>
+          )}
           <button onClick={() => settingsDialog.current?.showModal()} aria-label="Settings" className="ml-auto flex min-h-11 min-w-11 items-center justify-center text-mute hover:text-ink lg:ml-0">
             <SettingsIcon />
           </button>
