@@ -18,17 +18,18 @@ export default function Login() {
   }
 
   return (
-    <form onSubmit={submit} className="min-h-dvh flex flex-col justify-center gap-3 p-6 max-w-sm mx-auto">
+    <form onSubmit={submit} className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-3 p-6">
+      <h1 className="t-big rise mb-4 text-[52px]">Dictate</h1>
       <input
         type="password"
         autoFocus
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         placeholder="Password"
-        className="min-h-12 rounded-lg px-4 border-[0.5px] border-fg bg-bg text-fg"
+        className="min-h-12 bg-c100 px-4 text-ink"
       />
-      <button className="min-h-12 rounded-lg bg-primary text-bg font-medium">Log in</button>
-      <p className="text-sm text-primary min-h-5" role="alert">{error}</p>
+      <button className="t-small min-h-12 bg-ink text-c50">Log in</button>
+      <p className="t-small min-h-5 text-hot-text" role="alert">{error}</p>
     </form>
   )
 }
