@@ -78,12 +78,13 @@ export default function DocPage() {
     const documentMarkdown = ed.getMarkdown() // before insert, so the raw chunk isn't its own context
     const id = crypto.randomUUID()
     const processed = applySpokenCommands(text)
-    if (!ed.insertChunk(processed, block, id)) return
+    const placement = ed.insertChunk(processed, block, id)
+    if (!placement) return
     // bring the new text into view (the editor may not be focused)
     requestAnimationFrame(() => editor.current?.scrollToEnd())
     // command-only chunk ("new line new line"): nothing for Claude to fix, and it narrates instead of answering
     if (!refine.current || !processed.trim()) return ed.replacePending(id, processed)
-    api<{ text: string }>('/refine', { method: 'POST', body: JSON.stringify({ documentMarkdown, chunk: text, block }) }).then(
+    api<{ text: string }>('/refine', { method: 'POST', body: JSON.stringify({ documentMarkdown, chunk: text, block, placement }) }).then(
       (r) => editor.current?.replacePending(id, r.text),
       () => editor.current?.clearPending(id),
     )

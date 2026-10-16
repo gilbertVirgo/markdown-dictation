@@ -5,12 +5,12 @@ import Link from '@tiptap/extension-link'
 import { Markdown } from 'tiptap-markdown'
 import Toolbar from './Toolbar'
 import { PendingMark } from './PendingMark'
-import type { BlockType } from '../lib/refinePrompt'
+import type { BlockType, Placement } from '../lib/refinePrompt'
 
 export type { BlockType } from '../lib/refinePrompt'
 export type EditorHandle = {
   getMarkdown(): string
-  insertChunk(text: string, block: BlockType, pendingId: string): boolean
+  insertChunk(text: string, block: BlockType, pendingId: string): Placement | null
   replacePending(pendingId: string, text: string): void
   clearPending(pendingId: string): void
   scrollToEnd(): void
@@ -35,7 +35,7 @@ export const Editor = forwardRef<EditorHandle, { initial: string; onChange(md: s
 
     useImperativeHandle(ref, () => ({
       getMarkdown: () => (editor ? getMarkdown(editor) : initial),
-      insertChunk: (text, block, pendingId) => !!editor && insertChunk(editor, text, block, pendingId),
+      insertChunk: (text, block, pendingId) => (editor ? insertChunk(editor, text, block, pendingId) : null),
       replacePending: (pendingId, text) => editor && replacePending(editor, pendingId, text),
       clearPending: (pendingId) => editor && clearPending(editor, pendingId),
       scrollToEnd: () => scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' }),
@@ -58,17 +58,19 @@ export const getMarkdown = (editor: TiptapEditor): string =>
   (editor.storage as unknown as { markdown: { getMarkdown(): string } }).markdown.getMarkdown()
 
 // Body text continues the last paragraph; anything else (or a picked block type) starts a new block.
-// Returns false (nothing inserted) for blank text: ProseMirror rejects empty text nodes.
-export function insertChunk(editor: TiptapEditor, text: string, block: BlockType, pendingId: string): boolean {
-  if (!text.trim() && !text.includes('\n')) return false
+// Returns 'inline' when joined onto existing text, 'block' when it starts a new block or follows a line break,
+// null (nothing inserted) for blank text: ProseMirror rejects empty text nodes.
+export function insertChunk(editor: TiptapEditor, text: string, block: BlockType, pendingId: string): Placement | null {
+  if (!text.trim() && !text.includes('\n')) return null
   const content = [{ type: 'text', text, marks: [{ type: 'pending', attrs: { id: pendingId, block } }] }]
   const { doc } = editor.state
   const last = doc.lastChild
   const end = doc.content.size
   if (block === 'body' && last?.type.name === 'paragraph' && last.content.size > 0) {
-    const sep = /\s$/.test(last.textContent) || last.lastChild?.type.name === 'hardBreak' ? [] : [{ type: 'text', text: ' ' }]
+    const br = last.lastChild?.type.name === 'hardBreak'
+    const sep = br || /\s$/.test(last.textContent) ? [] : [{ type: 'text', text: ' ' }]
     editor.commands.insertContentAt(end - 1, [...sep, ...content])
-    return true
+    return br ? 'block' : 'inline'
   }
   const node =
     block === 'body' ? { type: 'paragraph', content }
@@ -77,9 +79,11 @@ export function insertChunk(editor: TiptapEditor, text: string, block: BlockType
   // replace the empty trailing paragraph (StarterKit TrailingNode) instead of appending after it
   const from = last?.type.name === 'paragraph' && last.content.size === 0 ? end - last.nodeSize : end
   editor.commands.insertContentAt({ from, to: end }, node)
-  return true
+  return 'block'
 }
 
+// punctuation that hugs the previous word: drop insertChunk's separator space before it
+const LEAD_PUNCT = /^[.,;:!?)\]…’”]/
 const BLOCK_START = /^\s*([-*+] |\d+\. |#{1,6} |> )/
 const HAS_MARKDOWN = /\n|^\s*([-*+] |\d+\. |#{1,6} |> )|\*\*|__|\[[^\]]+\]\(/
 // leading/trailing "new paragraph" (\n\n) or "new line" (\n) the markdown parser would drop
@@ -105,8 +109,10 @@ export function replacePending(editor: TiptapEditor, pendingId: string, raw: str
     return
   }
   if (!HAS_MARKDOWN.test(raw)) {
-    const tr = editor.state.tr.insertText(raw, r.from, r.to)
-    editor.view.dispatch(tr.removeMark(r.from, r.from + raw.length, type))
+    let from = r.from
+    if (LEAD_PUNCT.test(raw) && editor.state.doc.textBetween(from - 1, from) === ' ') from--
+    const tr = editor.state.tr.insertText(raw, from, r.to)
+    editor.view.dispatch(tr.removeMark(from, from + raw.length, type))
     return
   }
   const text = raw.trim()
@@ -134,8 +140,8 @@ export function replacePending(editor: TiptapEditor, pendingId: string, raw: str
   const trail = edge(raw.match(/\n\s*$/)?.[0])
   let from = r.from
   const tr = editor.state.tr
-  // drop the separator insertChunk added when the result starts a new block
-  if ((lead || BLOCK_START.test(text)) && doc.textBetween(from - 1, from) === ' ') from--
+  // drop the separator insertChunk added when the result starts a new block or with hugging punctuation
+  if ((lead || BLOCK_START.test(text) || LEAD_PUNCT.test(text)) && doc.textBetween(from - 1, from) === ' ') from--
   tr.delete(from, r.to)
   if (lead === 'p') tr.split(from), (from += 2)
   else if (lead === 'br') tr.insert(from, schema.nodes.hardBreak.create()), from++
