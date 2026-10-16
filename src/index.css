@@ -69,7 +69,7 @@ body { background: var(--c50); color: var(--ink); font-family: var(--font-sans);
 @keyframes hop { 0%, 60%, 100% { transform: none; } 30% { transform: translateY(-4px); } }
 @keyframes step { 0%, 100% { background: var(--c200); } 33% { background: var(--c300); } 66% { background: var(--c50); } }
 @keyframes pending { 50% { opacity: 0.7; } }
-@keyframes breathe { 50% { background: var(--hot); } }
+@keyframes breathe { 50% { background: var(--hot); color: var(--on-hot); } }
 .rise { animation: rise 0.4s var(--ease) both; }
 .hop > span { display: inline-block; white-space: pre; animation: hop 1s var(--ease) infinite; }
 .breathe { animation: breathe 1s ease-in-out infinite; }
