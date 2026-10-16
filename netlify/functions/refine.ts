@@ -4,6 +4,7 @@ import { requireAuth } from './_lib/session'
 
 const BLOCKS: BlockType[] = ['h1', 'h2', 'h3', 'body', 'quote']
 const PLACEMENTS: Placement[] = ['inline', 'block']
+const OUTPUT_SCHEMA = { type: 'object', properties: { text: { type: 'string' } }, required: ['text'], additionalProperties: false }
 export default async (req: Request): Promise<Response> => {
   try {
     const denied = requireAuth(req)
@@ -18,11 +19,13 @@ export default async (req: Request): Promise<Response> => {
     }
     let msg: Anthropic.Message
     try {
-      // Haiku 5.5 rejects non-default sampling params (temperature) with 400; thinking off for latency
+      // Haiku 5.5 rejects non-default sampling params (temperature) with 400; thinking off for latency.
+      // JSON output: as plain text, Haiku sometimes narrated its "~" decisions into the document.
       msg = await new Anthropic().messages.create({
         model: 'claude-haiku-5-5',
         max_tokens: 1024,
         thinking: { type: 'disabled' },
+        output_config: { format: { type: 'json_schema', schema: OUTPUT_SCHEMA } },
         system: REFINE_SYSTEM,
         messages: [{ role: 'user', content: buildRefineUser(documentMarkdown, chunk, block as BlockType, placement as Placement) }],
       })
@@ -31,8 +34,9 @@ export default async (req: Request): Promise<Response> => {
       return Response.json({ error: String((e as Error)?.message ?? e) }, { status: 502 })
     }
     if (msg.stop_reason === 'refusal') return Response.json({ error: 'refused' }, { status: 502 })
-    const text = msg.content.map((b) => (b.type === 'text' ? b.text : '')).join('').replace(/^[ \t]+|[ \t]+$/g, '') // keep edge \n: "new paragraph" at a chunk end
-    return Response.json(msg.stop_reason === 'max_tokens' ? { text, truncated: true } : { text })
+    if (msg.stop_reason === 'max_tokens') return Response.json({ error: 'truncated' }, { status: 502 }) // JSON would be cut off
+    const { text } = JSON.parse(msg.content.map((b) => (b.type === 'text' ? b.text : '')).join('')) as { text: string }
+    return Response.json({ text: text.replace(/^[ \t]+|[ \t]+$/g, '') }) // keep edge \n: "new paragraph" at a chunk end
   } catch (e) {
     console.error('refine: failed', e)
     return Response.json({ error: String((e as Error)?.message ?? e) }, { status: 500 })
