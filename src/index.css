@@ -2,17 +2,15 @@
 
 @theme {
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --color-primary: var(--primary);
   --color-bg: var(--bg);
   --color-fg: var(--fg);
-  --color-surface: var(--surface);
-  --color-border: var(--border);
-  --color-muted: var(--muted);
-  --color-primary: #F2543D;
 }
 
-:root { --bg: #fff; --fg: #111; --surface: #f4f4f4; --border: #e2e2e2; --muted: #777; }
+:root { --bg: #fefefe; --fg: #1c1c1c; --primary: #0000ff; }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #000; --fg: #f2f2f2; --surface: #161616; --border: #2a2a2a; --muted: #9a9a9a; }
+  /* #0000ff is ~2.3:1 on #1c1c1c; #7373ff is ~4.5:1 */
+  :root { --bg: #1c1c1c; --fg: #fefefe; --primary: #7373ff; }
 }
 
 html, body, #root { height: 100%; }
@@ -35,8 +33,13 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); -
 .ProseMirror h2 { font-size: 1.5em; font-weight: 700; }
 .ProseMirror h3 { font-size: 1.25em; font-weight: 600; }
 .ProseMirror p { text-wrap: pretty; margin: 0.75em 0; }
-.ProseMirror blockquote { border-left: 3px solid var(--color-primary); padding-left: 0.75em; color: var(--muted); font-style: italic; }
+.ProseMirror blockquote { border-left: 0.5px solid var(--color-primary); padding-left: 0.75em; color: var(--fg); font-style: italic; }
 .ProseMirror ul { list-style: disc; padding-left: 1.25em; }
 .ProseMirror ol { list-style: decimal; padding-left: 1.25em; }
 .ProseMirror li p { margin: 0.25em 0; }
 .ProseMirror a { color: var(--color-primary); text-decoration: underline; }
+
+/* palette: no browser-default blue focus ring or grey placeholder */
+:focus-visible { outline: 1px solid var(--color-primary); outline-offset: -1px; } /* sits on the element's own border: one line, not two */
+.ProseMirror:focus-visible { outline: none; }
+::placeholder { color: var(--fg); opacity: 1; }

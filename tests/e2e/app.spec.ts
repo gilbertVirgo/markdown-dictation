@@ -17,7 +17,6 @@ test.describe('full flow', () => {
     await page.getByLabel('New document').click()
     await page.waitForURL(/\/doc\//)
 
-    await page.getByRole('tab', { name: /text/i }).click()
     await page.locator('.ProseMirror').click()
     await page.keyboard.type('# Hello world')
     await expect(page.locator('h1')).toHaveText('Hello world')

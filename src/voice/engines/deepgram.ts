@@ -5,7 +5,7 @@ const MAX_KEYTERMS = 50
 const MAX_FAILURES = 5
 
 export function buildListenUrl(lang: string, keyterms: string[]): string {
-  const p = new URLSearchParams({ model: 'nova-3', smart_format: 'true', interim_results: 'true', language: lang })
+  const p = new URLSearchParams({ model: 'nova-3', smart_format: 'false', punctuate: 'false', interim_results: 'true', language: lang })
   for (const k of keyterms.slice(0, MAX_KEYTERMS)) p.append('keyterm', k)
   return `wss://api.deepgram.com/v1/listen?${p}`
 }
@@ -37,6 +37,7 @@ export const deepgram: Engine = {
     }
     if (session !== me) return s.getTracks().forEach((t) => t.stop()) // stopped while awaiting permission
     stream = s
+    opts.onStream?.(s)
 
     let failures = 0
     const retry = () => {

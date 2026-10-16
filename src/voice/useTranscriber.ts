@@ -7,47 +7,79 @@ import { deepgram } from './engines/deepgram'
 export type EngineName = 'webspeech' | 'openai' | 'deepgram'
 const ENGINES: Record<EngineName, Engine> = { webspeech, openai, deepgram }
 
-export function useTranscriber(opts: { engine: EngineName; lang: string; vocabulary: () => string[]; onFinal(text: string): void }): {
+export function useTranscriber(opts: {
+  engine: EngineName
+  lang: string
+  vocabulary: () => string[]
+  onFinal(text: string): void
+  onLevel?(level: number): void // 0..1 mic input level, per animation frame
+}): {
   live: boolean
-  muted: boolean
   interim: string
   error: string | null
   start(): void
   stop(): void
-  toggleMute(): void
 } {
   const { engine, lang } = opts
   const [live, setLive] = useState(false)
-  const [muted, setMuted] = useState(false)
   const [interim, setInterim] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const mutedRef = useRef(false)
   const call = useRef(0) // bumped per start()/stop() so a superseded start's callbacks are ignored
   const latest = useRef(opts)
   latest.current = opts
+  const audio = useRef<AudioContext | null>(null)
+  const raf = useRef(0)
+
+  const stopMeter = useCallback(() => {
+    cancelAnimationFrame(raf.current)
+    void audio.current?.close().catch(() => {})
+    audio.current = null
+    latest.current.onLevel?.(0)
+  }, [])
 
   const stop = useCallback(() => {
     call.current++
     ENGINES[engine].stop()
+    stopMeter()
     setLive(false)
     setInterim('')
-  }, [engine])
+  }, [engine, stopMeter])
 
   const start = useCallback(() => {
     const me = ++call.current
     let failed = false
     setError(null)
+    stopMeter()
+    // created synchronously inside the tap so iOS Safari lets it run
+    const ctx = typeof AudioContext === 'undefined' ? null : new AudioContext()
+    audio.current = ctx
     ENGINES[engine]
       .start({
         lang,
         vocabulary: () => latest.current.vocabulary(),
+        onStream(stream) {
+          if (call.current !== me || !ctx) return
+          const analyser = ctx.createAnalyser()
+          analyser.fftSize = 256
+          analyser.smoothingTimeConstant = 0.6
+          ctx.createMediaStreamSource(stream).connect(analyser)
+          const buf = new Uint8Array(analyser.fftSize)
+          const tick = () => {
+            analyser.getByteTimeDomainData(buf)
+            let sum = 0
+            for (const v of buf) sum += ((v - 128) / 128) ** 2
+            latest.current.onLevel?.(Math.min(1, Math.sqrt(sum / buf.length) * 4))
+            raf.current = requestAnimationFrame(tick)
+          }
+          tick()
+        },
         onFinal(text) {
           setInterim('')
           if (!failed && call.current === me) setError(null) // transient error recovered
-          if (!mutedRef.current) latest.current.onFinal(text)
+          latest.current.onFinal(text)
         },
         onInterim(text) {
-          setInterim(mutedRef.current ? '' : text)
+          setInterim(text)
         },
         onError(msg, fatal = true) {
           if (call.current !== me) return
@@ -55,26 +87,18 @@ export function useTranscriber(opts: { engine: EngineName; lang: string; vocabul
           if (!fatal) return // transient (e.g. one failed upload): keep listening
           failed = true
           ENGINES[engine].stop()
+          stopMeter()
           setLive(false)
         },
       })
       .then(
         () => call.current === me && setLive(!failed),
-        (e: Error) => call.current === me && (setError(e.message), setLive(false)),
+        (e: Error) => call.current === me && (setError(e.message), stopMeter(), setLive(false)),
       )
-  }, [engine, lang])
+  }, [engine, lang, stopMeter])
 
-  // Mounted only in voice mode: start on enter / engine or language change, stop on leave.
-  useEffect(() => {
-    start()
-    return stop
-  }, [start, stop])
+  // stop on unmount, and stop the old engine when the engine changes (stop is recreated)
+  useEffect(() => () => stop(), [stop])
 
-  const toggleMute = useCallback(() => {
-    mutedRef.current = !mutedRef.current
-    setMuted(mutedRef.current)
-    setInterim('')
-  }, [])
-
-  return { live, muted, interim, error, start, stop, toggleMute }
+  return { live, interim, error, start, stop }
 }

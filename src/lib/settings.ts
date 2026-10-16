@@ -6,7 +6,7 @@ export type Settings = { engine: EngineName; refine: boolean; lang: string; size
 const KEY = 'dictate.settings'
 const ENGINE_NAMES: EngineName[] = ['webspeech', 'openai', 'deepgram']
 export const SIZES: Size[] = ['small', 'medium', 'large']
-export const DEFAULTS: Settings = { engine: 'webspeech', refine: true, lang: 'en-GB', size: 'medium' }
+export const DEFAULTS: Settings = { engine: 'deepgram', refine: true, lang: 'en-GB', size: 'medium' }
 
 function loadSettings(): Settings {
   try {

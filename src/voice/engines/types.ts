@@ -5,4 +5,5 @@ export type EngineOpts = {
   onFinal(text: string): void
   onInterim(text: string): void
   onError(msg: string, fatal?: boolean): void // fatal (default): engine has stopped; false: transient, still recording
+  onStream?(stream: MediaStream): void // mic stream, for level metering
 }

@@ -68,7 +68,7 @@ it('markdown never contains pending spans', () => {
 
 it('a lone "new line" chunk becomes a hardBreak', () => {
   make('First.')
-  expect(insertChunk(ed, '\n', 'body', 'a')).toBe(true)
+  expect(insertChunk(ed, '\n', 'body', 'a')).toBe('inline')
   replacePending(ed, 'a', '\n')
   expect(ed.getJSON().content![0].content!.map((n) => n.type)).toEqual(['text', 'hardBreak'])
   expect(ed.getJSON().content![0].content![0].text).toBe('First.') // separator and raw text gone
@@ -86,6 +86,69 @@ it('a lone "new paragraph" chunk splits the paragraph', () => {
 
 it('blank chunk inserts nothing', () => {
   make('First.')
-  expect(insertChunk(ed, '  ', 'body', 'a')).toBe(false)
+  expect(insertChunk(ed, '  ', 'body', 'a')).toBeNull()
   expect(getMarkdown(ed)).toBe('First.')
+})
+
+it('reports placement: inline when appended, block otherwise', () => {
+  make('First')
+  expect(insertChunk(ed, 'more', 'body', 'a')).toBe('inline')
+  expect(insertChunk(ed, 'title', 'h2', 'b')).toBe('block')
+  expect(insertChunk(ed, 'body', 'body', 'c')).toBe('block')
+})
+
+it('leading comma drops the separator space', () => {
+  make('in fifty-two days')
+  insertChunk(ed, 'and then', 'body', 'a')
+  replacePending(ed, 'a', ', and then')
+  expect(getMarkdown(ed)).toBe('in fifty-two days, and then')
+})
+
+it('leading full stop closes the sentence without a space', () => {
+  make('in fifty-two days')
+  insertChunk(ed, 'then we left', 'body', 'a')
+  replacePending(ed, 'a', '. Then we left')
+  expect(getMarkdown(ed)).toBe('in fifty-two days. Then we left')
+})
+
+it('leading punctuation drops the separator on the markdown path too', () => {
+  make('in fifty-two days')
+  insertChunk(ed, 'and then bold', 'body', 'a')
+  replacePending(ed, 'a', ', and then **bold**')
+  expect(getMarkdown(ed)).toBe('in fifty-two days, and then **bold**')
+})
+
+it('"~" reopens the previous sentence with a word', () => {
+  make('The wall was rebuilt.')
+  insertChunk(ed, 'in fifty two days', 'body', 'a')
+  replacePending(ed, 'a', '~in fifty-two days.')
+  expect(getMarkdown(ed)).toBe('The wall was rebuilt in fifty-two days.')
+})
+
+it('"~" reopens the previous sentence with a comma', () => {
+  make('The wall was rebuilt!')
+  insertChunk(ed, 'and then', 'body', 'a')
+  replacePending(ed, 'a', '~, and then')
+  expect(getMarkdown(ed)).toBe('The wall was rebuilt, and then')
+})
+
+it('"~" with no terminal punctuation before is just stripped', () => {
+  make('The wall was rebuilt')
+  insertChunk(ed, 'in fifty two days', 'body', 'a')
+  replacePending(ed, 'a', '~in **fifty-two** days')
+  expect(getMarkdown(ed)).toBe('The wall was rebuilt in **fifty-two** days')
+})
+
+it('"~" on a new block is stripped and the previous block untouched', () => {
+  make('Intro.')
+  insertChunk(ed, 'next part', 'h2', 'a')
+  replacePending(ed, 'a', '~Next part')
+  expect(getMarkdown(ed)).toBe('Intro.\n\n## Next part')
+})
+
+it('a lone "~" keeps the raw text and the previous punctuation', () => {
+  make('Rebuilt.')
+  insertChunk(ed, 'um', 'body', 'a')
+  replacePending(ed, 'a', '~')
+  expect(getMarkdown(ed)).toBe('Rebuilt. um')
 })

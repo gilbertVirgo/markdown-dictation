@@ -25,10 +25,10 @@ export default function Login() {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         placeholder="Password"
-        className="min-h-12 px-4 rounded-lg bg-surface border border-border text-fg"
+        className="min-h-12 rounded-lg px-4 border-[0.5px] border-fg bg-bg text-fg"
       />
-      <button className="min-h-12 rounded-lg bg-primary text-white font-medium">Log in</button>
-      <p className="text-sm text-muted min-h-5" role="alert">{error}</p>
+      <button className="min-h-12 rounded-lg bg-primary text-bg font-medium">Log in</button>
+      <p className="text-sm text-primary min-h-5" role="alert">{error}</p>
     </form>
   )
 }

@@ -46,17 +46,17 @@ export default function DocList() {
   }
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-[720px] bg-bg text-fg pb-28">
-      {failed && <p className="p-8 text-center text-muted">Couldn’t load documents.</p>}
-      {docs?.length === 0 && <p className="p-8 text-center text-muted">No documents yet. Tap + to start dictating.</p>}
+    <main className="mx-auto min-h-dvh w-full max-w-180 bg-bg text-fg pb-28">
+      {failed && <p className="p-8 text-center text-fg">Couldn’t load documents.</p>}
+      {docs?.length === 0 && <p className="p-8 text-center text-fg">No documents yet. Tap + to start dictating.</p>}
       <ul>
         {docs?.map((d) => (
-          <li key={d.id} className="flex items-center min-h-14 border-b border-border">
+          <li key={d.id} className="flex items-center min-h-14 border-b-[0.5px] border-fg">
             <button onClick={() => navigate(`/doc/${d.id}`)} className="flex-1 min-h-14 px-4 text-left min-w-0">
               <div className="truncate">{d.title}</div>
-              <div className="text-sm text-muted">{ago(d.updatedAt)}</div>
+              <div className="text-sm text-fg">{ago(d.updatedAt)}</div>
             </button>
-            <button onClick={() => remove(d)} aria-label="Delete" className="min-h-14 w-14 text-muted">
+            <button onClick={() => remove(d)} aria-label="Delete" className="min-h-14 w-14 text-fg">
               <Trash className="mx-auto size-5" />
             </button>
           </li>
@@ -66,7 +66,7 @@ export default function DocList() {
         onClick={create}
         disabled={creating}
         aria-label="New document"
-        className="fixed right-4 flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-lg disabled:opacity-50"
+        className="fixed right-4 flex size-14 items-center justify-center rounded-full bg-primary text-bg disabled:bg-fg disabled:text-bg"
         style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
       >
         <Plus className="size-7" />

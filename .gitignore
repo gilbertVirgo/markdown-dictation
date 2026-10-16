@@ -29,3 +29,5 @@ dist
 test-results
 .superpowers/
 playwright-report
+shots/
+.claude/launch.json
