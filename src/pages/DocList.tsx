@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useMatch, useNavigate } from 'react-router'
 import { api } from '../lib/api'
 import { Plus, Trash } from '../ui/icons'
+import { Loader } from '../ui/Loader'
 
 type Item = { id: string; title: string; updatedAt: string }
 
@@ -18,10 +19,13 @@ export default function DocList() {
   const [creating, setCreating] = useState(false)
   const [failed, setFailed] = useState(false)
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const current = useMatch('/doc/:id')?.params.id
 
+  // refetch per route change: on desktop this list stays mounted beside the doc
   useEffect(() => {
-    api<{ docs: Item[] }>('/docs').then((r) => setDocs(r.docs), () => setFailed(true))
-  }, [])
+    api<{ docs: Item[] }>('/docs').then((r) => (setDocs(r.docs), setFailed(false)), () => setFailed(true))
+  }, [pathname])
 
   async function create() {
     setCreating(true)
@@ -40,37 +44,41 @@ export default function DocList() {
     try {
       await api('/docs/' + d.id, { method: 'DELETE' })
       setDocs((x) => x?.filter((i) => i.id !== d.id) ?? null)
+      if (d.id === current) navigate('/')
     } catch (e) {
       alert((e as Error).message)
     }
   }
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-180 bg-bg text-fg pb-28">
-      {failed && <p className="p-8 text-center text-fg">Couldn’t load documents.</p>}
-      {docs?.length === 0 && <p className="p-8 text-center text-fg">No documents yet. Tap + to start dictating.</p>}
+    <nav className="min-h-dvh bg-c100 pt-[env(safe-area-inset-top)] text-ink lg:min-h-full">
+      <div className="flex items-center justify-between py-2 pr-2 pl-4">
+        <span className="t-small">Dictate</span>
+        <button onClick={create} disabled={creating} aria-label="New document" className="flex size-11 items-center justify-center bg-hot text-ink disabled:bg-c300">
+          <Plus className="size-6" />
+        </button>
+      </div>
+      {docs === null && !failed && <Loader label="Fetching" />}
+      {failed && <p className="t-small p-4 text-mute">Couldn’t load documents.</p>}
+      {docs?.length === 0 && <p className="t-small p-4 text-mute">No documents yet. Tap + to start dictating.</p>}
       <ul>
-        {docs?.map((d) => (
-          <li key={d.id} className="flex items-center min-h-14 border-b-[0.5px] border-fg">
-            <button onClick={() => navigate(`/doc/${d.id}`)} className="flex-1 min-h-14 px-4 text-left min-w-0">
-              <div className="truncate">{d.title}</div>
-              <div className="text-sm text-fg">{ago(d.updatedAt)}</div>
+        {docs?.map((d, i) => (
+          <li
+            key={d.id}
+            style={{ animationDelay: `${Math.min(i, 10) * 60}ms` }}
+            className={`rise group flex items-center ${d.id === current ? 'bg-c200' : 'hover:bg-c200/60'}`}
+          >
+            <button onClick={() => navigate(`/doc/${d.id}`)} aria-current={d.id === current ? 'page' : undefined} className="min-w-0 flex-1 px-4 py-3 text-left">
+              {/* leading > t-big's 0.95 so truncate doesn't clip descenders */}
+              <div className="t-big truncate text-[36px] leading-[1.1] lg:text-[22px]">{d.title}</div>
+              <div className="t-small mt-1 text-mute">{ago(d.updatedAt)}</div>
             </button>
-            <button onClick={() => remove(d)} aria-label="Delete" className="min-h-14 w-14 text-fg">
+            <button onClick={() => remove(d)} aria-label="Delete" className="min-h-14 w-14 text-mute hover:text-hot-text focus-visible:opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
               <Trash className="mx-auto size-5" />
             </button>
           </li>
         ))}
       </ul>
-      <button
-        onClick={create}
-        disabled={creating}
-        aria-label="New document"
-        className="fixed right-4 flex size-14 items-center justify-center rounded-full bg-primary text-bg disabled:bg-fg disabled:text-bg"
-        style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
-      >
-        <Plus className="size-7" />
-      </button>
-    </main>
+    </nav>
   )
 }
