@@ -38,7 +38,8 @@ export default function Toolbar({ editor }: { editor: Editor }) {
   ]
 
   return (
-    <div className="flex shrink-0 overflow-x-auto border-t-[0.5px] border-fg bg-bg">
+    // desktop: lifted into the header row (DocPage's <main> is the positioned ancestor)
+    <div className="flex shrink-0 overflow-x-auto bg-c100 lg:absolute lg:top-0 lg:left-4 lg:bg-transparent">
       {buttons.map(([k, label, run]) => (
         <button
           key={k}
@@ -47,7 +48,7 @@ export default function Toolbar({ editor }: { editor: Editor }) {
           aria-pressed={active[k]}
           onMouseDown={(e) => e.preventDefault()}
           onClick={run}
-          className={`min-h-11 min-w-11 flex-1 px-2 font-semibold ${active[k] ? 'text-primary' : 'text-fg'} ${k === 'italic' ? 'italic' : ''}`}
+          className={`min-h-11 min-w-11 flex-1 px-2 text-[15px] lg:flex-none ${k === 'bold' ? 'font-extrabold' : 'font-medium'} ${active[k] ? 'bg-ink text-c50' : 'text-ink hover:bg-c200'} ${k === 'italic' ? 'italic' : ''}`}
         >
           {label}
         </button>

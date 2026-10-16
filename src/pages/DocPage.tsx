@@ -9,6 +9,7 @@ import { VoicePanel } from '../voice/VoicePanel'
 import { useSettings } from '../lib/settings'
 import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight'
 import { SettingsDialog } from '../ui/SettingsDialog'
+import { Dots, Loader } from '../ui/Loader'
 import { ArrowLeft, MoreVertical, Settings as SettingsIcon } from '../ui/icons'
 
 type Doc = { id: string; title: string; markdown: string; updatedAt: string }
@@ -127,37 +128,40 @@ export default function DocPage() {
     location.replace('/login')
   }
 
-  const item = 'block w-full min-h-11 px-4 text-left'
+  const item = 't-small block w-full min-h-11 px-4 text-left hover:bg-c200'
 
   return (
-    // fixed-height column sized to the visible viewport: header and footer stay put, only the editor scrolls
-    <main data-size={settings.size} className="fixed inset-x-0 top-[var(--vvt,0px)] mx-auto flex h-[var(--vvh,100dvh)] w-full max-w-180 flex-col overflow-hidden bg-bg text-fg">
-      <header className="shrink-0 border-b-[0.5px] border-fg bg-bg pt-[env(safe-area-inset-top)]">
-        <div className="flex items-center gap-1 px-1">
-          <button onClick={() => navigate('/')} aria-label="Back" className="flex min-h-11 min-w-11 items-center justify-center">
+    // fixed-height column sized to the visible viewport: header and footer stay put, only the editor scrolls.
+    // Desktop: sits right of Shell's fixed 280px sidebar.
+    <main data-size={settings.size} className="fixed inset-x-0 top-[var(--vvt,0px)] flex h-[var(--vvh,100dvh)] flex-col overflow-hidden bg-c50 text-ink lg:left-70">
+      <header className="shrink-0 bg-c100 pt-[env(safe-area-inset-top)] lg:bg-c50">
+        <div className="flex items-center gap-1 px-1 lg:px-4">
+          <button onClick={() => navigate('/')} aria-label="Back" className="flex min-h-11 min-w-11 items-center justify-center lg:hidden">
             <ArrowLeft />
           </button>
-          <span className={`px-3 py-1 text-sm ${status === 'error' ? 'text-primary' : 'text-fg'}`}>
-            {STATUS[status]}
+          {/* keyed so each status change rises in like a ticker */}
+          <span key={status} className={`t-small rise px-3 lg:ml-auto ${status === 'error' ? 'text-hot-text' : 'text-mute'}`}>
+            {status === 'saving' ? <>Saving<Dots /></> : STATUS[status]}
           </span>
-          <button onClick={() => settingsDialog.current?.showModal()} aria-label="Settings" className="ml-auto flex min-h-11 min-w-11 items-center justify-center">
+          <button onClick={() => settingsDialog.current?.showModal()} aria-label="Settings" className="ml-auto flex min-h-11 min-w-11 items-center justify-center text-mute hover:text-ink lg:ml-0">
             <SettingsIcon />
           </button>
           <details ref={menu} className="relative" onClick={(e) => (e.target as HTMLElement).closest('button') && e.currentTarget.removeAttribute('open')}>
-            <summary aria-label="Menu" className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center [&::-webkit-details-marker]:hidden">
+            <summary aria-label="Menu" className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center text-mute hover:text-ink [&::-webkit-details-marker]:hidden">
               <MoreVertical />
             </summary>
-            <div className="absolute top-full -right-1 z-20 mt-0 w-48 overflow-hidden rounded-bl-xl border-[0.5px] border-r-0 border-fg bg-bg py-1">
+            <div className="rise absolute top-full right-0 z-20 w-48 bg-c100 py-1" style={{ animationDuration: '.22s' }}>
               <button className={item} onClick={() => navigator.clipboard.writeText(latest.current)}>Copy markdown</button>
               <button className={item} onClick={download}>Download .md</button>
-              <button className={`${item} text-primary`} onClick={remove}>Delete</button>
+              <button className={`${item} text-hot-text`} onClick={remove}>Delete</button>
               <button className={item} onClick={logout}>Logout</button>
             </div>
           </details>
         </div>
       </header>
 
-      {failed && <p className="flex-1 p-8 text-center text-fg">Couldn’t load this document.</p>}
+      {!doc && !failed && <Loader label="Opening" />}
+      {failed && <p className="t-small flex-1 p-8 text-center text-mute">Couldn’t load this document.</p>}
       {doc && <Editor key={id} ref={editor} initial={doc.markdown} onChange={onChange} />}
 
       {doc && <VoicePanel onChunk={onChunk} vocabulary={vocabulary} settings={settings} />}
