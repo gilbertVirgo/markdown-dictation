@@ -39,7 +39,7 @@ export default function Toolbar({ editor }: { editor: Editor }) {
 
   return (
     // desktop: lifted into the header row (DocPage's <main> is the positioned ancestor)
-    <div className="flex shrink-0 overflow-x-auto bg-c100 lg:absolute lg:top-0 lg:left-4 lg:bg-transparent">
+    <div className="flex shrink-0 overflow-x-auto bg-c100 lg:absolute lg:top-[env(safe-area-inset-top)] lg:left-4 lg:bg-transparent">
       {buttons.map(([k, label, run]) => (
         <button
           key={k}

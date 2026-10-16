@@ -48,7 +48,7 @@ export function VoicePanel({ onChunk, vocabulary, settings }: {
             onClick={t.live || t.connecting ? t.stop : t.start}
             aria-label={t.live || t.connecting ? 'Stop microphone' : 'Start microphone'}
             aria-pressed={t.live || t.connecting}
-            className={`relative flex size-full items-center justify-center text-ink ${t.live ? 'bg-hot' : t.connecting ? 'breathe bg-c300' : 'bg-c50'}`}
+            className={`relative flex size-full items-center justify-center ${t.live ? 'bg-hot text-on-hot' : t.connecting ? 'breathe bg-c300 text-on-hot' : 'bg-c50 text-ink'}`}
           >
             <Mic className="size-7" />
           </button>
@@ -60,7 +60,7 @@ export function VoicePanel({ onChunk, vocabulary, settings }: {
       </div>
 
       <div role="radiogroup" aria-label="Next block type" className="flex items-center px-4 lg:px-8">
-        <span aria-hidden className="t-small mr-3 hidden shrink-0 text-mute sm:inline">Next block</span>
+        <span aria-hidden className="t-small mr-3 shrink-0 text-mute">Next block</span>
         {BLOCKS.map(([b, label]) => (
           <button
             key={b}

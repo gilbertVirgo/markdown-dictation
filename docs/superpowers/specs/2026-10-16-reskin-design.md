@@ -21,12 +21,13 @@ Sand neutrals with a tangerine accent (hue ~30°, low saturation). Areas separat
 | `--c100` | `#EEE7DF` | `#1F1B17` | sidebar, header, toolbar, picker strip |
 | `--c200` | `#E0D4C6` | `#2C261F` | voice dock, selected doc, dialog |
 | `--c300` | `#C9B49E` | `#4D4237` | loading bars, placeholder |
-| `--ink` | `#2E241C` | `#F1EBE4` | text, selected chip fill, icon on `--hot` |
+| `--ink` | `#2E241C` | `#F1EBE4` | text, selected chip fill |
 | `--mute` | `#665443` | `#A8998A` | small labels, interim transcript |
 | `--hot` | `#F2701F` | `#F2701F` | fills: live mic, level ring, + button |
-| `--hot-text` | `#B8500F` | `#F2701F` | text: pending chunk, Delete, error status |
+| `--hot-text` | `#98440C` | `#F2701F` | text: pending chunk, Delete, error status |
+| `--on-hot` | `#2E241C` | `#2E241C` | icon on `--hot` fills |
 
-Contrast (WCAG AA): `--mute` ≥ 4.9:1 on every panel in both modes. `--hot-text` 4.6:1 on light `--c50`, 6.3:1 dark. Icons on `--hot` use `--ink` (5.1:1), not white (2.9:1).
+Contrast (WCAG AA): `--mute` ≥ 4.9:1 on every panel in both modes. `--hot-text` ≥ 4.5:1 on c50/c100/c200 in both modes; icons on `--hot` use `--on-hot` (5.1:1), not white (2.9:1).
 
 Selected state (block picker, text size, active toolbar mark) = solid `--ink` block with `--c50` text. `theme-color` meta follows `--c100`.
 

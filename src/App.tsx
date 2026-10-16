@@ -3,15 +3,16 @@ import DocList from './pages/DocList'
 import DocPage from './pages/DocPage'
 import Login from './pages/Login'
 
+// Keyed Outlet remounts DocPage per doc, so one useAutosave never spans two docs.
 // Phone: list and doc are separate screens. Desktop (lg): the list is a permanent sidebar beside the doc.
-function Shell() {
-  const inDoc = !!useMatch('/doc/:id')
+export function Shell() {
+  const id = useMatch('/doc/:id')?.params.id
   return (
     <>
-      <aside className={`${inDoc ? 'hidden' : ''} lg:fixed lg:inset-y-0 lg:left-0 lg:block lg:w-70 lg:overflow-y-auto`}>
+      <aside className={`${id ? 'hidden' : ''} lg:fixed lg:inset-y-0 lg:left-0 lg:block lg:w-70 lg:overflow-y-auto`}>
         <DocList />
       </aside>
-      <Outlet />
+      <Outlet key={id} />
     </>
   )
 }

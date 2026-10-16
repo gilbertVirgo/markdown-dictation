@@ -51,10 +51,10 @@ export default function DocList() {
   }
 
   return (
-    <nav className="min-h-dvh bg-c100 pt-[env(safe-area-inset-top)] text-ink lg:min-h-full">
+    <nav className="min-h-dvh bg-c100 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-ink lg:min-h-full">
       <div className="flex items-center justify-between py-2 pr-2 pl-4">
         <span className="t-small">Dictate</span>
-        <button onClick={create} disabled={creating} aria-label="New document" className="flex size-11 items-center justify-center bg-hot text-ink disabled:bg-c300">
+        <button onClick={create} disabled={creating} aria-label="New document" className="flex size-11 items-center justify-center bg-hot text-on-hot disabled:bg-c300">
           <Plus className="size-6" />
         </button>
       </div>
