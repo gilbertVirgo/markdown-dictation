@@ -41,27 +41,27 @@ export function VoicePanel({ onChunk, vocabulary, settings }: {
         {notice ?? (t.interim || (t.live ? 'Listening…' : 'Tap to dictate'))}
       </p>
 
-      <div className="relative my-2 size-[72px]">
+      <div className="relative my-2 size-18">
         {/* level ring: solid circle behind the button, only transform animates */}
         <span ref={ring} aria-hidden className="pointer-events-none absolute inset-0 rounded-full bg-primary transition-transform duration-75" />
         <button
           onClick={t.live ? t.stop : t.start}
           aria-label={t.live ? 'Stop microphone' : 'Start microphone'}
           aria-pressed={t.live}
-          className={`relative flex size-full items-center justify-center rounded-full border-[0.5px] ${t.live ? 'border-primary bg-primary text-light' : 'border-fg bg-bg text-fg'}`}
+          className={`relative flex size-full items-center justify-center rounded-full border-[0.5px] ${t.live ? 'border-primary bg-primary text-bg' : 'border-fg bg-bg text-fg'}`}
         >
           <Mic className="size-8" />
         </button>
       </div>
 
-      <div className="grid w-full grid-cols-5 gap-2" role="radiogroup" aria-label="Next block type">
+      <div className="grid w-full grid-cols-5" role="radiogroup" aria-label="Next block type">
         {BLOCKS.map(([b, label]) => (
           <button
             key={b}
             role="radio"
             aria-checked={pendingBlock === b}
             onClick={() => pick(b)}
-            className={`min-h-14 border-[0.5px] bg-bg font-semibold ${pendingBlock === b ? 'border-primary text-primary' : 'border-fg text-fg'}`}
+            className={`min-h-14 border-[0.5px] border-l-0 border-fg font-semibold first:rounded-l-lg first:border-l-[0.5px] last:rounded-r-lg ${pendingBlock === b ? 'bg-fg text-bg' : ''}`}
           >
             {label}
           </button>

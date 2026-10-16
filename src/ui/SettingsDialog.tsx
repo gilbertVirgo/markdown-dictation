@@ -18,9 +18,9 @@ export function SettingsDialog({ ref, settings, update }: {
         if (langInput.current) langInput.current.value = lang // show the normalised value next time
         if (lang !== settings.lang) update({ lang })
       }}
-      className="m-auto w-[min(24rem,calc(100%-2rem))] border-[0.5px] border-fg bg-bg p-0 text-fg backdrop:bg-transparent"
+      className="inset-x-4 m-auto w-auto max-w-none rounded-3xl border-[0.5px] border-fg bg-bg p-0 text-fg backdrop:bg-transparent sm:max-w-sm"
     >
-      <form method="dialog" className="flex flex-col gap-4 p-5">
+      <form method="dialog" className="flex flex-col gap-4 p-4">
         <h2 className="text-lg font-semibold">Settings</h2>
         <div className="flex flex-col gap-1">
           Text size
@@ -32,7 +32,7 @@ export function SettingsDialog({ ref, settings, update }: {
                 role="radio"
                 aria-checked={settings.size === s}
                 onClick={() => update({ size: s })}
-                className={`min-h-11 flex-1 border-[0.5px] border-l-0 border-fg capitalize first:border-l-[0.5px] ${settings.size === s ? 'bg-fg font-semibold text-bg' : ''}`}
+                className={`min-h-11 flex-1 border-[0.5px] border-l-0 border-fg capitalize first:rounded-l-lg first:border-l-[0.5px] last:rounded-r-lg ${settings.size === s ? 'bg-fg font-semibold text-bg' : ''}`}
               >
                 {s}
               </button>
@@ -44,7 +44,7 @@ export function SettingsDialog({ ref, settings, update }: {
           <select
             value={settings.engine}
             onChange={(e) => update({ engine: e.target.value as EngineName })}
-            className="min-h-11 border-[0.5px] border-fg bg-bg px-3"
+            className="min-h-11 rounded-lg border-[0.5px] border-fg bg-bg px-3"
           >
             <option value="deepgram">Deepgram</option>
             <option value="webspeech">Browser (Web Speech)</option>
@@ -57,9 +57,9 @@ export function SettingsDialog({ ref, settings, update }: {
         </label>
         <label className="flex flex-col gap-1">
           Language
-          <input ref={langInput} defaultValue={settings.lang} className="min-h-11 border-[0.5px] border-fg bg-bg px-3" />
+          <input ref={langInput} defaultValue={settings.lang} className="min-h-11 rounded-lg border-[0.5px] border-fg bg-bg px-3" />
         </label>
-        <button className="min-h-11 bg-primary font-semibold text-light">Done</button>
+        <button className="min-h-11 rounded-lg bg-primary font-semibold text-bg">Done</button>
       </form>
     </dialog>
   )

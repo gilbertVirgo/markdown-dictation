@@ -2,16 +2,15 @@
 
 @theme {
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --color-dark: #1c1c1c;
-  --color-light: #fefefe;
-  --color-primary: #0000ff;
+  --color-primary: var(--primary);
   --color-bg: var(--bg);
   --color-fg: var(--fg);
 }
 
-:root { --bg: #fefefe; --fg: #1c1c1c; }
+:root { --bg: #fefefe; --fg: #1c1c1c; --primary: #0000ff; }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #1c1c1c; --fg: #fefefe; }
+  /* #0000ff is ~2.3:1 on #1c1c1c; #7373ff is ~4.5:1 */
+  :root { --bg: #1c1c1c; --fg: #fefefe; --primary: #7373ff; }
 }
 
 html, body, #root { height: 100%; }
@@ -41,6 +40,6 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); -
 .ProseMirror a { color: var(--color-primary); text-decoration: underline; }
 
 /* palette: no browser-default blue focus ring or grey placeholder */
-:focus-visible { outline: 1px solid var(--color-primary); outline-offset: 2px; }
+:focus-visible { outline: 1px solid var(--color-primary); outline-offset: -1px; } /* sits on the element's own border: one line, not two */
 .ProseMirror:focus-visible { outline: none; }
 ::placeholder { color: var(--fg); opacity: 1; }
