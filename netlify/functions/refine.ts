@@ -27,12 +27,14 @@ export default async (req: Request): Promise<Response> => {
         messages: [{ role: 'user', content: buildRefineUser(documentMarkdown, chunk, block as BlockType, placement as Placement) }],
       })
     } catch (e) {
+      console.error('refine: anthropic call failed', e)
       return Response.json({ error: String((e as Error)?.message ?? e) }, { status: 502 })
     }
     if (msg.stop_reason === 'refusal') return Response.json({ error: 'refused' }, { status: 502 })
     const text = msg.content.map((b) => (b.type === 'text' ? b.text : '')).join('').replace(/^[ \t]+|[ \t]+$/g, '') // keep edge \n: "new paragraph" at a chunk end
     return Response.json(msg.stop_reason === 'max_tokens' ? { text, truncated: true } : { text })
   } catch (e) {
+    console.error('refine: failed', e)
     return Response.json({ error: String((e as Error)?.message ?? e) }, { status: 500 })
   }
 }
