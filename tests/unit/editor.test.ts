@@ -117,3 +117,38 @@ it('leading punctuation drops the separator on the markdown path too', () => {
   replacePending(ed, 'a', ', and then **bold**')
   expect(getMarkdown(ed)).toBe('in fifty-two days, and then **bold**')
 })
+
+it('"~" reopens the previous sentence with a word', () => {
+  make('The wall was rebuilt.')
+  insertChunk(ed, 'in fifty two days', 'body', 'a')
+  replacePending(ed, 'a', '~in fifty-two days.')
+  expect(getMarkdown(ed)).toBe('The wall was rebuilt in fifty-two days.')
+})
+
+it('"~" reopens the previous sentence with a comma', () => {
+  make('The wall was rebuilt!')
+  insertChunk(ed, 'and then', 'body', 'a')
+  replacePending(ed, 'a', '~, and then')
+  expect(getMarkdown(ed)).toBe('The wall was rebuilt, and then')
+})
+
+it('"~" with no terminal punctuation before is just stripped', () => {
+  make('The wall was rebuilt')
+  insertChunk(ed, 'in fifty two days', 'body', 'a')
+  replacePending(ed, 'a', '~in **fifty-two** days')
+  expect(getMarkdown(ed)).toBe('The wall was rebuilt in **fifty-two** days')
+})
+
+it('"~" on a new block is stripped and the previous block untouched', () => {
+  make('Intro.')
+  insertChunk(ed, 'next part', 'h2', 'a')
+  replacePending(ed, 'a', '~Next part')
+  expect(getMarkdown(ed)).toBe('Intro.\n\n## Next part')
+})
+
+it('a lone "~" keeps the raw text and the previous punctuation', () => {
+  make('Rebuilt.')
+  insertChunk(ed, 'um', 'body', 'a')
+  replacePending(ed, 'a', '~')
+  expect(getMarkdown(ed)).toBe('Rebuilt. um')
+})

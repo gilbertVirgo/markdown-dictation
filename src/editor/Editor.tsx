@@ -90,8 +90,19 @@ const HAS_MARKDOWN = /\n|^\s*([-*+] |\d+\. |#{1,6} |> )|\*\*|__|\[[^\]]+\]\(/
 const edge = (s: string | undefined) => (s === undefined ? null : /\n[ \t]*\n/.test(s) ? 'p' : 'br')
 
 export function replacePending(editor: TiptapEditor, pendingId: string, raw: string) {
-  const r = pendingRange(editor, pendingId)
+  let r = pendingRange(editor, pendingId)
   if (!r) return
+  if (raw.startsWith('~')) {
+    // "~": the model reopened a sentence it closed at a pause; drop that . ? ! before the separator
+    raw = raw.slice(1)
+    const { doc } = editor.state
+    let at = r.from
+    if (doc.textBetween(at - 1, at) === ' ') at--
+    if (raw.trim() && doc.resolve(at).parentOffset > 0 && /[.?!]/.test(doc.textBetween(at - 1, at))) {
+      editor.view.dispatch(editor.state.tr.delete(at - 1, at))
+      r = pendingRange(editor, pendingId)!
+    }
+  }
   const { schema } = editor
   const type = schema.marks.pending
   if (!raw.trim()) {
