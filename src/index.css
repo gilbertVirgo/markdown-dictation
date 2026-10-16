@@ -59,7 +59,7 @@ body { background: var(--c50); color: var(--ink); font-family: var(--font-sans);
 /* dictated chunk waiting on Claude: pulses until replaced */
 .ProseMirror [data-pending] { animation: pending 1.4s ease-in-out infinite; }
 
-:focus-visible { outline: 2px solid var(--hot); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--hot-text); outline-offset: 2px; }
 .ProseMirror:focus-visible { outline: none; }
 ::placeholder { color: var(--mute); opacity: 1; }
 
@@ -70,9 +70,9 @@ body { background: var(--c50); color: var(--ink); font-family: var(--font-sans);
 @keyframes pending { 50% { opacity: 0.45; } }
 @keyframes breathe { 50% { background: var(--hot); } }
 .rise { animation: rise 0.4s var(--ease) both; }
-.hop > span { display: inline-block; animation: hop 1s var(--ease) infinite; }
+.hop > span { display: inline-block; white-space: pre; animation: hop 1s var(--ease) infinite; }
 .breathe { animation: breathe 1s ease-in-out infinite; }
-.loader-bar { height: 1.5rem; margin-bottom: 0.5rem; animation: step 1.2s steps(1) infinite; }
+.loader-bar { height: 1.5rem; margin-bottom: 0.5rem; background: var(--c200); animation: step 1.2s steps(1) infinite; }
 dialog[open] { animation: rise 0.36s var(--ease); }
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { animation: none !important; transition: none !important; }
