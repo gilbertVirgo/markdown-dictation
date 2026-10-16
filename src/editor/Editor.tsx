@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useImperativeHandle, useRef } from 'react'
 import { EditorContent, useEditor, type Editor as TiptapEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -24,19 +24,14 @@ export const extensions = [
   PendingMark,
 ]
 
-export const Editor = forwardRef<EditorHandle, { initial: string; editable: boolean; onChange(md: string): void }>(
-  function Editor({ initial, editable, onChange }, ref) {
+export const Editor = forwardRef<EditorHandle, { initial: string; onChange(md: string): void }>(
+  function Editor({ initial, onChange }, ref) {
     const editor = useEditor({
       extensions,
       content: initial,
-      editable,
       onUpdate: ({ editor }) => onChange(getMarkdown(editor)),
     })
     const scroller = useRef<HTMLDivElement>(null)
-
-    useEffect(() => {
-      editor?.setEditable(editable, false)
-    }, [editor, editable])
 
     useImperativeHandle(ref, () => ({
       getMarkdown: () => (editor ? getMarkdown(editor) : initial),
@@ -52,7 +47,7 @@ export const Editor = forwardRef<EditorHandle, { initial: string; editable: bool
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto [scroll-padding-bottom:3rem]">
           <EditorContent editor={editor} className="px-4 py-4" />
         </div>
-        {editable && editor && <Toolbar editor={editor} />}
+        {editor && <Toolbar editor={editor} />}
       </>
     )
   },

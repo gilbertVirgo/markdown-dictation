@@ -3,8 +3,8 @@
   "short_name": "Dictate",
   "display": "standalone",
   "start_url": "/",
-  "background_color": "#F2543D",
-  "theme_color": "#F2543D",
+  "background_color": "#fefefe",
+  "theme_color": "#fefefe",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

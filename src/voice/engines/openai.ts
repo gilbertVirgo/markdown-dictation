@@ -28,6 +28,7 @@ export const openai: Engine = {
     }
     if (session !== me) return s.getTracks().forEach((t) => t.stop()) // stopped while awaiting permission
     stream = s
+    opts.onStream?.(s)
 
     let dead = false // set on 401 so the stop() flush doesn't upload again
     const upload = async (blob: Blob) => {

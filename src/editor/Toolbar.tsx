@@ -38,7 +38,7 @@ export default function Toolbar({ editor }: { editor: Editor }) {
   ]
 
   return (
-    <div className="flex shrink-0 overflow-x-auto border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]">
+    <div className="flex shrink-0 overflow-x-auto border-t border-fg bg-bg pb-[env(safe-area-inset-bottom)]">
       {buttons.map(([k, label, run]) => (
         <button
           key={k}

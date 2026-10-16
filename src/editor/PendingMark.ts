@@ -12,7 +12,7 @@ export const PendingMark = Mark.create({
     block: { default: 'body', rendered: false },
   }),
   parseHTML: () => [{ tag: 'span[data-pending]' }],
-  renderHTML: ({ HTMLAttributes }) => ['span', { ...HTMLAttributes, class: 'text-muted' }, 0],
+  renderHTML: ({ HTMLAttributes }) => ['span', { ...HTMLAttributes, class: 'text-primary' }, 0],
   // tiptap-markdown would otherwise serialise unknown marks as raw HTML spans
   addStorage: () => ({ markdown: { serialize: { open: '', close: '' } } }),
 })
