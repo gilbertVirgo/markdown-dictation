@@ -4,7 +4,7 @@
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --color-dark: #1c1c1c;
   --color-light: #fefefe;
-  --color-primary: #ff1111;
+  --color-primary: #0000ff;
   --color-bg: var(--bg);
   --color-fg: var(--fg);
 }
@@ -34,7 +34,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); -
 .ProseMirror h2 { font-size: 1.5em; font-weight: 700; }
 .ProseMirror h3 { font-size: 1.25em; font-weight: 600; }
 .ProseMirror p { text-wrap: pretty; margin: 0.75em 0; }
-.ProseMirror blockquote { border-left: 1px solid var(--color-primary); padding-left: 0.75em; color: var(--fg); font-style: italic; }
+.ProseMirror blockquote { border-left: 0.5px solid var(--color-primary); padding-left: 0.75em; color: var(--fg); font-style: italic; }
 .ProseMirror ul { list-style: disc; padding-left: 1.25em; }
 .ProseMirror ol { list-style: decimal; padding-left: 1.25em; }
 .ProseMirror li p { margin: 0.25em 0; }

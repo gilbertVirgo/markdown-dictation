@@ -51,7 +51,7 @@ export default function DocList() {
       {docs?.length === 0 && <p className="p-8 text-center text-fg">No documents yet. Tap + to start dictating.</p>}
       <ul>
         {docs?.map((d) => (
-          <li key={d.id} className="flex items-center min-h-14 border-b border-fg">
+          <li key={d.id} className="flex items-center min-h-14 border-b-[0.5px] border-fg">
             <button onClick={() => navigate(`/doc/${d.id}`)} className="flex-1 min-h-14 px-4 text-left min-w-0">
               <div className="truncate">{d.title}</div>
               <div className="text-sm text-fg">{ago(d.updatedAt)}</div>

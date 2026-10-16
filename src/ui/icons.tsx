@@ -2,7 +2,7 @@ import type { ReactNode, SVGProps } from 'react'
 
 // Lucide-style 24px stroke icons
 const icon = (paths: ReactNode) => (props: SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden {...props}>
+  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden {...props}>
     {paths}
   </svg>
 )

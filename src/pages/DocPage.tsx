@@ -130,7 +130,7 @@ export default function DocPage() {
   return (
     // fixed-height column sized to the visible viewport: header and footer stay put, only the editor scrolls
     <main data-size={settings.size} className="fixed inset-x-0 top-[var(--vvt,0px)] mx-auto flex h-[var(--vvh,100dvh)] w-full max-w-[720px] flex-col overflow-hidden bg-bg text-fg">
-      <header className="shrink-0 border-b border-fg bg-bg pt-[env(safe-area-inset-top)]">
+      <header className="shrink-0 border-b-[0.5px] border-fg bg-bg pt-[env(safe-area-inset-top)]">
         <div className="flex items-center gap-1 px-1">
           <button onClick={() => navigate('/')} aria-label="Back" className="flex min-h-11 min-w-11 items-center justify-center">
             <ArrowLeft />
@@ -145,7 +145,7 @@ export default function DocPage() {
             <summary aria-label="Menu" className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center [&::-webkit-details-marker]:hidden">
               <MoreVertical />
             </summary>
-            <div className="absolute right-0 z-20 mt-1 w-48 border border-fg bg-bg py-1">
+            <div className="absolute right-0 z-20 mt-1 w-48 border-[0.5px] border-fg bg-bg py-1">
               <button className={item} onClick={() => navigator.clipboard.writeText(latest.current)}>Copy markdown</button>
               <button className={item} onClick={download}>Download .md</button>
               <button className={`${item} text-primary`} onClick={remove}>Delete</button>

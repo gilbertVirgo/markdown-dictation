@@ -36,7 +36,7 @@ export function VoicePanel({ onChunk, vocabulary, settings }: {
     : t.error
 
   return (
-    <div className="flex shrink-0 flex-col items-center gap-3 border-t border-fg bg-bg px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+    <div className="flex shrink-0 flex-col items-center gap-3 border-t-[0.5px] border-fg bg-bg px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
       <p className="min-h-6 w-full truncate text-center text-fg italic" aria-live="polite">
         {notice ?? (t.interim || (t.live ? 'Listening…' : 'Tap to dictate'))}
       </p>
@@ -48,7 +48,7 @@ export function VoicePanel({ onChunk, vocabulary, settings }: {
           onClick={t.live ? t.stop : t.start}
           aria-label={t.live ? 'Stop microphone' : 'Start microphone'}
           aria-pressed={t.live}
-          className={`relative flex size-full items-center justify-center rounded-full border ${t.live ? 'border-primary bg-primary text-light' : 'border-fg bg-bg text-fg'}`}
+          className={`relative flex size-full items-center justify-center rounded-full border-[0.5px] ${t.live ? 'border-primary bg-primary text-light' : 'border-fg bg-bg text-fg'}`}
         >
           <Mic className="size-8" />
         </button>
@@ -61,7 +61,7 @@ export function VoicePanel({ onChunk, vocabulary, settings }: {
             role="radio"
             aria-checked={pendingBlock === b}
             onClick={() => pick(b)}
-            className={`min-h-14 border bg-bg font-semibold ${pendingBlock === b ? 'border-primary text-primary' : 'border-fg text-fg'}`}
+            className={`min-h-14 border-[0.5px] bg-bg font-semibold ${pendingBlock === b ? 'border-primary text-primary' : 'border-fg text-fg'}`}
           >
             {label}
           </button>
