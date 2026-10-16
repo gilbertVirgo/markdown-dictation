@@ -81,7 +81,8 @@ export default function DocPage() {
     if (!ed.insertChunk(processed, block, id)) return
     // bring the new text into view (the editor may not be focused)
     requestAnimationFrame(() => editor.current?.scrollToEnd())
-    if (!refine.current) return ed.replacePending(id, processed)
+    // command-only chunk ("new line new line"): nothing for Claude to fix, and it narrates instead of answering
+    if (!refine.current || !processed.trim()) return ed.replacePending(id, processed)
     api<{ text: string }>('/refine', { method: 'POST', body: JSON.stringify({ documentMarkdown, chunk: text, block }) }).then(
       (r) => editor.current?.replacePending(id, r.text),
       () => editor.current?.clearPending(id),
@@ -129,7 +130,7 @@ export default function DocPage() {
 
   return (
     // fixed-height column sized to the visible viewport: header and footer stay put, only the editor scrolls
-    <main data-size={settings.size} className="fixed inset-x-0 top-[var(--vvt,0px)] mx-auto flex h-[var(--vvh,100dvh)] w-full max-w-[720px] flex-col overflow-hidden bg-bg text-fg">
+    <main data-size={settings.size} className="fixed inset-x-0 top-[var(--vvt,0px)] mx-auto flex h-[var(--vvh,100dvh)] w-full max-w-180 flex-col overflow-hidden bg-bg text-fg">
       <header className="shrink-0 border-b-[0.5px] border-fg bg-bg pt-[env(safe-area-inset-top)]">
         <div className="flex items-center gap-1 px-1">
           <button onClick={() => navigate('/')} aria-label="Back" className="flex min-h-11 min-w-11 items-center justify-center">
@@ -145,7 +146,7 @@ export default function DocPage() {
             <summary aria-label="Menu" className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center [&::-webkit-details-marker]:hidden">
               <MoreVertical />
             </summary>
-            <div className="absolute right-0 z-20 mt-1 w-48 border-[0.5px] border-fg bg-bg py-1">
+            <div className="absolute top-full -right-1 z-20 mt-0 w-48 overflow-hidden rounded-bl-xl border-[0.5px] border-r-0 border-fg bg-bg py-1">
               <button className={item} onClick={() => navigator.clipboard.writeText(latest.current)}>Copy markdown</button>
               <button className={item} onClick={download}>Download .md</button>
               <button className={`${item} text-primary`} onClick={remove}>Delete</button>
