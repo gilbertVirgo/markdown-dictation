@@ -1,4 +1,4 @@
-# Reskin: Bricolage + Garamond, muted coral, desktop sidebar
+# Reskin: Bricolage + Garamond, sand and tangerine, desktop sidebar
 
 Builds on PR #2's structure (always-editable doc, pinned toolbar, always-on voice panel, tap start/stop mic with level ring, pending text in accent). Replaces PR #2's look (three colours, 0.5px hairlines, rounded corners).
 
@@ -13,19 +13,22 @@ Builds on PR #2's structure (always-editable doc, pinned toolbar, always-on voic
 
 ## Colour
 
-Tonal coral scale, light and dark. Areas separated by fill colour, never lines.
+Sand neutrals with a tangerine accent (hue ~30°, low saturation). Areas separated by fill colour, never lines. Orange appears only where it means something: live mic, level ring, pending text, + button, Delete, error status.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `--c50` | `#FBF4F1` | `#1B110E` | page / editor |
-| `--c100` | `#F4E3DC` | `#251713` | sidebar, header, toolbar, picker strip |
-| `--c200` | `#EACBC0` | `#352119` | voice dock, selected doc, dialog |
-| `--c300` | `#D9A797` | `#5A372B` | loading bars, placeholder |
-| `--ink` | `#3B1D15` | `#F6E6DF` | text, selected chip fill |
-| `--mute` | `#94614F` | `#B98C7D` | small labels, interim transcript |
-| `--hot` | `#F2543D` | `#F2543D` | live mic, level ring, pending text, + button, Delete, error status |
+| `--c50` | `#F8F5F1` | `#161310` | page / editor |
+| `--c100` | `#EEE7DF` | `#1F1B17` | sidebar, header, toolbar, picker strip |
+| `--c200` | `#E0D4C6` | `#2C261F` | voice dock, selected doc, dialog |
+| `--c300` | `#C9B49E` | `#4D4237` | loading bars, placeholder |
+| `--ink` | `#2E241C` | `#F1EBE4` | text, selected chip fill, icon on `--hot` |
+| `--mute` | `#665443` | `#A8998A` | small labels, interim transcript |
+| `--hot` | `#F2701F` | `#F2701F` | fills: live mic, level ring, + button |
+| `--hot-text` | `#B8500F` | `#F2701F` | text: pending chunk, Delete, error status |
 
-Selected state (block picker, text size, active toolbar mark) = solid `--ink` block with `--c50` text. `theme-color` meta follows `--c100`. Check `--hot` pending text contrast on `--c50` in both modes; darken for text use if under 4.5:1.
+Contrast (WCAG AA): `--mute` ≥ 4.9:1 on every panel in both modes. `--hot-text` 4.6:1 on light `--c50`, 6.3:1 dark. Icons on `--hot` use `--ink` (5.1:1), not white (2.9:1).
+
+Selected state (block picker, text size, active toolbar mark) = solid `--ink` block with `--c50` text. `theme-color` meta follows `--c100`.
 
 ## Shape
 
@@ -56,7 +59,7 @@ Selected state (block picker, text size, active toolbar mark) = solid `--ink` bl
 
 - Doc list: three `--c300`-stepping bars (`steps()` cycle through c100/c200/c300) + "FETCHING" with letters hopping (staggered translateY).
 - Saving: "SAVING" with three hopping dots.
-- Pending (Claude refining): word-by-word opacity wave over the `--hot` pending text; refined text rises in.
+- Pending (Claude refining): word-by-word opacity wave over the `--hot-text` pending text; refined text rises in.
 - Mic connecting: square breathes between `--c300` and `--hot` until live.
 
 ## Out of scope
