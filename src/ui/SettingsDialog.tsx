@@ -44,7 +44,7 @@ export function SettingsDialog({ ref, settings, update }: {
           <select
             value={settings.engine}
             onChange={(e) => update({ engine: e.target.value as EngineName })}
-            className="min-h-11 bg-c50 px-3 text-ink"
+            className="min-h-11 bg-c50 pl-3 text-ink"
           >
             <option value="deepgram">Deepgram</option>
             <option value="webspeech">Browser (Web Speech)</option>

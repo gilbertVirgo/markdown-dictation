@@ -73,7 +73,7 @@ export default function DocList() {
               <div className="t-big truncate text-[36px] leading-[1.1] lg:text-[22px]">{d.title}</div>
               <div className="t-small mt-1 text-mute">{ago(d.updatedAt)}</div>
             </button>
-            <button onClick={() => remove(d)} aria-label="Delete" className="min-h-14 w-14 text-mute hover:text-hot-text focus-visible:opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+            <button onClick={() => remove(d)} aria-label="Delete" className="min-h-14 w-14 text-mute hover:text-hot-text focus-visible:opacity-100 lg:[@media(hover:hover)]:opacity-0 lg:[@media(hover:hover)]:group-hover:opacity-100">
               <Trash className="mx-auto size-5" />
             </button>
           </li>

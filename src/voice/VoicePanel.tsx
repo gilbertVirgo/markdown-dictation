@@ -45,9 +45,9 @@ export function VoicePanel({ onChunk, vocabulary, settings }: {
           {/* level ring: square behind the button, only transform animates */}
           <span ref={ring} aria-hidden className="pointer-events-none absolute inset-0 bg-hot/30 transition-transform duration-75" />
           <button
-            onClick={t.live ? t.stop : t.start}
-            aria-label={t.live ? 'Stop microphone' : 'Start microphone'}
-            aria-pressed={t.live}
+            onClick={t.live || t.connecting ? t.stop : t.start}
+            aria-label={t.live || t.connecting ? 'Stop microphone' : 'Start microphone'}
+            aria-pressed={t.live || t.connecting}
             className={`relative flex size-full items-center justify-center text-ink ${t.live ? 'bg-hot' : t.connecting ? 'breathe bg-c300' : 'bg-c50'}`}
           >
             <Mic className="size-7" />

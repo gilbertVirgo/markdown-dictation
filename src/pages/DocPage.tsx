@@ -53,15 +53,23 @@ export default function DocPage() {
   }, [])
 
   useEffect(() => {
+    let stale = false // DocPage stays mounted across ids on desktop: ignore a superseded fetch
     setDoc(null)
     setFailed(false)
     api<Doc>('/docs/' + id).then(
       (d) => {
+        if (stale) return
         latest.current = d.markdown
         setDoc(d)
       },
-      () => setFailed(true),
+      () => {
+        if (stale) return
+        setFailed(true)
+      },
     )
+    return () => {
+      stale = true
+    }
   }, [id])
 
   const onChange = useCallback(
