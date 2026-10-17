@@ -3,6 +3,7 @@ import { applySpokenCommands } from '../lib/spokenCommands'
 import { useNavigate, useParams } from 'react-router'
 import { api } from '../lib/api'
 import { deriveTitle, extractVocabulary } from '../lib/markdown'
+import type { HeadingSuggestion } from '../lib/headingsPrompt'
 import { Editor, type BlockType, type EditorHandle } from '../editor/Editor'
 import { useAutosave } from '../hooks/useAutosave'
 import { VoicePanel } from '../voice/VoicePanel'
@@ -35,6 +36,9 @@ export default function DocPage() {
   const nextRef = useRef(nextBlock)
   const pickNext = useCallback((b: BlockType) => setNextBlock((nextRef.current = b)), [])
   const [dictating, setDictating] = useState(false)
+  // suggested headings: how many are showing, whether a request is out, and why the last one gave nothing
+  const [headings, setHeadings] = useState({ count: 0, busy: false, error: null as string | null })
+  const onSuggestions = useCallback((count: number) => setHeadings((h) => (h.count === count ? h : { ...h, count })), [])
   const editor = useRef<EditorHandle>(null)
   // Latest markdown, serialised only when something reads it. Refs, so the unmount flush works after the editor ref is detached.
   const latest = useRef('')
@@ -120,6 +124,19 @@ export default function DocPage() {
   }, [])
 
   const onPhantom = useCallback((text: string) => editor.current?.setPhantom(text), [])
+  function suggestHeadings() {
+    const ed = editor.current
+    if (!ed) return
+    if (dictating) return setHeadings((h) => ({ ...h, error: 'Stop the mic to suggest headings' }))
+    const blocks = ed.headingBlocks()
+    if (!blocks.some((b) => b.type === 'p')) return setHeadings((h) => ({ ...h, error: 'Write some paragraphs first' }))
+    setHeadings((h) => ({ ...h, busy: true, error: null }))
+    api<{ headings: HeadingSuggestion[] }>('/suggest-headings', { method: 'POST', body: JSON.stringify({ blocks }) }).then(
+      (r) => (editor.current?.suggestHeadings(r.headings), setHeadings((h) => ({ ...h, busy: false, error: r.headings.length ? null : 'No headings to suggest' }))),
+      (e: Error) => setHeadings((h) => ({ ...h, busy: false, error: `Couldn’t suggest headings: ${e.message}` })),
+    )
+  }
+
   const vocabulary = useCallback(() => extractVocabulary(markdown()), [markdown])
   const onFinal = useCallback((text: string) => (onChunk(text, nextRef.current), pickNext('body')), [onChunk, pickNext])
   const onActive = useCallback((a: boolean) => (setDictating(a), a || pickNext('body')), [pickNext])
@@ -205,6 +222,7 @@ export default function DocPage() {
                 <MoreVertical />
               </summary>
               <div className="rise absolute top-full right-0 z-20 w-48 bg-c100 py-1" style={{ animationDuration: '.22s' }}>
+                <button className={item} onClick={suggestHeadings}>Suggest headings</button>
                 <button className={item} onClick={() => navigator.clipboard.writeText(markdown())}>Copy markdown</button>
                 <button className={item} onClick={download}>Download .md</button>
                 <button className={`${item} text-hot-text`} onClick={remove}>Delete</button>
@@ -218,7 +236,26 @@ export default function DocPage() {
 
       {!doc && !failed && <Loader label="Opening" />}
       {failed && <p className="t-small flex-1 p-8 text-center text-mute">Couldn’t load this document.</p>}
-      {doc && <Editor key={id} ref={editor} initial={doc.markdown} onChange={onChange} editable={!reading} next={dictating ? { block: nextBlock, pick: pickNext } : null} />}
+      {doc && <Editor key={id} ref={editor} initial={doc.markdown} onChange={onChange} onSuggestions={onSuggestions} editable={!reading} next={dictating ? { block: nextBlock, pick: pickNext } : null} />}
+
+      {doc && !reading && (headings.busy || headings.count > 0 || headings.error) && (
+        <div role="status" className="flex shrink-0 items-center gap-1 border-t border-c200 bg-c100 pl-4 lg:pl-8">
+          <span className={`t-small min-w-0 flex-1 py-2 ${headings.error && !headings.busy ? 'text-hot-text' : 'text-mute'}`}>
+            {headings.busy ? <>Suggesting headings<Dots /></> : headings.error ?? `${headings.count} suggested heading${headings.count === 1 ? '' : 's'}`}
+          </span>
+          {!headings.busy && headings.count > 0 && (
+            <>
+              <button className="t-small min-h-11 px-4 text-ink hover:bg-c200" onClick={() => editor.current?.dropHeadings()}>Discard all</button>
+              <button className="t-small min-h-11 bg-hot px-4 text-on-hot" onClick={() => (editor.current?.keepHeadings(), setHeadings((h) => ({ ...h, error: null })))}>Keep all</button>
+            </>
+          )}
+          {!headings.busy && !headings.count && (
+            <button aria-label="Dismiss" className={iconBtn} onClick={() => setHeadings((h) => ({ ...h, error: null }))}>
+              <X />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* hidden, not unmounted: a live mic and in-flight refines keep working */}
       {doc && <div className={reading ? 'hidden' : 'contents'}><VoicePanel onFinal={onFinal} onPhantom={onPhantom} onActive={onActive} next={nextBlock} vocabulary={vocabulary} settings={settings} /></div>}
