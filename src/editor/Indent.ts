@@ -80,6 +80,7 @@ export const Indent = Extension.create({
     }
   },
   // --indent on indented blocks: index.css hangs the wrapped lines under the first line's text.
+  // The em spaces get a box exactly that many em wide: Safari draws EB Garamond's at ~0.25em, Chrome at 1em.
   // ponytail: rescans the whole doc each render; map a cached set through transactions if long docs lag
   addProseMirrorPlugins() {
     return [
@@ -90,7 +91,7 @@ export const Indent = Extension.create({
             doc.descendants((n, pos) => {
               if (!n.isTextblock) return
               const k = leading(n.textContent).length
-              if (k) decos.push(Decoration.node(pos, pos + n.nodeSize, { style: `--indent: ${k}` }))
+              if (k) decos.push(Decoration.node(pos, pos + n.nodeSize, { style: `--indent: ${k}` }), Decoration.inline(pos + 1, pos + 1 + k, { class: 'indent-ws', style: `--indent: ${k}` }))
               return false
             })
             return DecorationSet.create(doc, decos)
