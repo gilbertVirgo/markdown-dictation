@@ -49,7 +49,7 @@ body { background: var(--c50); color: var(--ink); font-family: var(--font-sans);
 /* DocPage with the sidebar collapsed (desktop): main[data-wide] is the aside's next sibling */
 @media (min-width: 1024px) { aside:has(~ main[data-wide]) { display: none; } }
 /* headings are Bricolage; the doc's first H1 is the page's BIG title */
-.ProseMirror :is(h1, h2, h3) { font-family: var(--font-sans); font-weight: 800; letter-spacing: -0.035em; line-height: 0.95; text-wrap: balance; margin: 0.9em 0 0.4em; }
+.ProseMirror :is(h1, h2, h3) { font-family: var(--font-sans); font-weight: 800; letter-spacing: -0.035em; line-height: 0.95; text-wrap: balance; margin: 1.125em 0 0.4em; }
 .ProseMirror h1 { font-size: 1.75em; }
 .ProseMirror > h1:first-child { font-size: 2em; margin-top: 0.2em; }
 @media (min-width: 1024px) { .ProseMirror > h1:first-child { font-size: 2.6em; } }
@@ -70,7 +70,7 @@ body { background: var(--c50); color: var(--ink); font-family: var(--font-sans);
 /* dictated chunk waiting on Claude: pulses until replaced */
 .ProseMirror [data-pending] { animation: pending 1.4s ease-in-out infinite; }
 /* suggested heading (Suggestions.ts): dashed until kept or dropped; hidden in reading mode */
-.ProseMirror .suggested-heading { display: flex; align-items: center; gap: 0.5em; margin: 0.9em 0 0.4em; padding-left: 0.6em; border: 1.5px dashed var(--hot); background: color-mix(in srgb, var(--hot) 7%, transparent); user-select: none; }
+.ProseMirror .suggested-heading { display: flex; align-items: center; gap: 0.5em; margin: 1.125em 0 0.4em; padding-left: 0.6em; border: 1.5px dashed var(--hot); background: color-mix(in srgb, var(--hot) 7%, transparent); user-select: none; }
 .ProseMirror .suggested-heading :is(h2, h3) { flex: 1; margin: 0.35em 0; color: var(--hot-text); }
 .suggested-heading .level { font: 500 11px/1 var(--font-sans); letter-spacing: 0.08em; color: var(--hot-text); }
 .suggested-heading button { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; color: var(--hot-text); }
