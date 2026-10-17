@@ -14,6 +14,12 @@ import { ArrowLeft, BookOpen, MoreVertical, PanelLeft, Settings as SettingsIcon,
 
 type Doc = { id: string; title: string; markdown: string; updatedAt: string }
 
+// indent em spaces and block breaks aren't characters anyone typed
+function count(text: string) {
+  const n = (x: number, unit: string) => `${x.toLocaleString()} ${unit}${x === 1 ? '' : 's'}`
+  return [n(text.match(/\S+/g)?.length ?? 0, 'word'), n([...text.replace(/[\n\u2003]/g, '')].length, 'character')]
+}
+
 const STATUS = { saved: 'Saved', saving: 'Saving…', error: 'Offline — unsaved' }
 
 export default function DocPage() {
@@ -23,6 +29,7 @@ export default function DocPage() {
   const [failed, setFailed] = useState(false)
   const [refineError, setRefineError] = useState<string | null>(null)
   const [reading, setReading] = useState(false)
+  const [counts, setCounts] = useState<string[]>([])
   // next dictated chunk's block type, picked in the toolbar while the mic is on; ref so back-to-back finals don't both use it
   const [nextBlock, setNextBlock] = useState<BlockType>('body')
   const nextRef = useRef(nextBlock)
@@ -186,7 +193,7 @@ export default function DocPage() {
             <button onClick={() => settingsDialog.current?.showModal()} aria-label="Settings" className={iconBtn}>
               <SettingsIcon />
             </button>
-            <details ref={menu} className="relative" onClick={(e) => (e.target as HTMLElement).closest('button') && e.currentTarget.removeAttribute('open')}>
+            <details ref={menu} className="relative" onToggle={(e) => e.currentTarget.open && setCounts(count(editor.current?.getText() ?? ''))} onClick={(e) => (e.target as HTMLElement).closest('button') && e.currentTarget.removeAttribute('open')}>
               <summary aria-label="Menu" className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center text-mute hover:text-ink [&::-webkit-details-marker]:hidden">
                 <MoreVertical />
               </summary>
@@ -195,6 +202,7 @@ export default function DocPage() {
                 <button className={item} onClick={download}>Download .md</button>
                 <button className={`${item} text-hot-text`} onClick={remove}>Delete</button>
                 <button className={item} onClick={logout}>Logout</button>
+                <p className="t-small mt-1 border-t border-c200 px-4 pt-3 pb-2 text-mute">{counts.map((c) => <span key={c} className="block">{c}</span>)}</p>
               </div>
             </details>
           </div>
