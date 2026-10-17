@@ -55,6 +55,10 @@ export function SettingsDialog({ ref, settings, update }: {
           <input type="checkbox" checked={settings.refine} onChange={(e) => update({ refine: e.target.checked })} className="size-5 accent-hot" />
           <span className="t-small">Refine with Claude</span>
         </label>
+        <label className="flex min-h-11 items-center gap-3">
+          <input type="checkbox" checked={settings.pretty} onChange={(e) => update({ pretty: e.target.checked })} className="size-5 accent-hot" />
+          <span className="t-small">Pretty line breaks</span>
+        </label>
         <label className="flex flex-col gap-1">
           <span className="t-small text-mute">Language</span>
           <input ref={langInput} defaultValue={settings.lang} className="min-h-11 bg-c50 px-3 text-ink" />
