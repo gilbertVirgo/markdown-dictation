@@ -21,6 +21,8 @@ declare global {
 const SR = () => window.SpeechRecognition ?? window.webkitSpeechRecognition
 
 export const isSupported = () => !!SR()
+// Safari and every iOS browser: their recognizer competes with getUserMedia for the mic and costs native memory
+export const isWebKit = () => /AppleWebKit/.test(navigator.userAgent) && !/Chrome\//.test(navigator.userAgent)
 
 let rec: Recognition | null = null
 
@@ -35,6 +37,7 @@ export const webspeech: Engine = {
     r.interimResults = true
     r.lang = opts.lang
     let failures = 0 // consecutive errors with no result in between
+    let delay = 250 // restart backoff: sessions that end without hearing anything double it, up to 8s
     const fail = (msg: string) => {
       opts.onError(msg)
       webspeech.stop()
@@ -42,6 +45,7 @@ export const webspeech: Engine = {
     r.onresult = (e) => {
       if (rec !== r) return
       failures = 0
+      delay = 250
       let interim = ''
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const text = e.results[i][0].transcript
@@ -59,8 +63,11 @@ export const webspeech: Engine = {
       if (e.error !== 'no-speech' && ++failures >= 5) fail('speech recognition keeps failing')
     }
     // Chrome ends sessions on silence/timeouts; keep restarting until stop(). Identity check ignores stale recognizers.
+    // A tight restart loop (Safari ending each session at once) leaks native memory until the tab is killed.
     r.onend = () => {
       if (rec !== r) return
+      const wait = delay
+      delay = Math.min(delay * 2, 8000)
       setTimeout(() => {
         if (rec !== r) return
         try {
@@ -69,7 +76,7 @@ export const webspeech: Engine = {
           // "already started" InvalidStateError is harmless; anything else is fatal
           if ((err as Error).name !== 'InvalidStateError') fail((err as Error).message)
         }
-      }, 250)
+      }, wait)
     }
     r.start()
   },

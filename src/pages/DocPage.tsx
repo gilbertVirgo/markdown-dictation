@@ -36,9 +36,14 @@ export default function DocPage() {
   const pickNext = useCallback((b: BlockType) => setNextBlock((nextRef.current = b)), [])
   const [dictating, setDictating] = useState(false)
   const editor = useRef<EditorHandle>(null)
-  // Latest markdown kept in a ref so unmount flush works after the editor ref is detached.
+  // Latest markdown, serialised only when something reads it. Refs, so the unmount flush works after the editor ref is detached.
   const latest = useRef('')
-  const { status, markDirty, cancel, flush } = useAutosave(id, () => latest.current)
+  const reader = useRef<(() => string) | null>(null)
+  const markdown = useCallback(() => {
+    if (reader.current) (latest.current = reader.current()), (reader.current = null)
+    return latest.current
+  }, [])
+  const { status, markDirty, cancel, flush } = useAutosave(id, markdown)
   const [settings, updateSettings] = useSettings()
   const settingsDialog = useRef<HTMLDialogElement>(null)
   const menu = useRef<HTMLDetailsElement>(null)
@@ -79,6 +84,7 @@ export default function DocPage() {
     api<Doc>('/docs/' + id).then(
       (d) => {
         latest.current = d.markdown
+        reader.current = null
         setDoc(d)
       },
       () => setFailed(true),
@@ -86,8 +92,8 @@ export default function DocPage() {
   }, [id])
 
   const onChange = useCallback(
-    (md: string) => {
-      latest.current = md
+    (read: () => string) => {
+      reader.current = read
       markDirty()
     },
     [markDirty],
@@ -114,7 +120,7 @@ export default function DocPage() {
   }, [])
 
   const onPhantom = useCallback((text: string) => editor.current?.setPhantom(text), [])
-  const vocabulary = useCallback(() => extractVocabulary(latest.current), [])
+  const vocabulary = useCallback(() => extractVocabulary(markdown()), [markdown])
   const onFinal = useCallback((text: string) => (onChunk(text, nextRef.current), pickNext('body')), [onChunk, pickNext])
   const onActive = useCallback((a: boolean) => (setDictating(a), a || pickNext('body')), [pickNext])
 
@@ -125,11 +131,11 @@ export default function DocPage() {
     return () => void delete w.__dictate
   }, [onChunk, onPhantom])
 
-  const title = () => deriveTitle(latest.current)
+  const title = () => deriveTitle(markdown())
 
   function download() {
     const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([latest.current], { type: 'text/markdown;charset=utf-8' }))
+    a.href = URL.createObjectURL(new Blob([markdown()], { type: 'text/markdown;charset=utf-8' }))
     a.download = `${title()}.md`
     a.click()
     setTimeout(() => URL.revokeObjectURL(a.href), 0)
@@ -199,7 +205,7 @@ export default function DocPage() {
                 <MoreVertical />
               </summary>
               <div className="rise absolute top-full right-0 z-20 w-48 bg-c100 py-1" style={{ animationDuration: '.22s' }}>
-                <button className={item} onClick={() => navigator.clipboard.writeText(latest.current)}>Copy markdown</button>
+                <button className={item} onClick={() => navigator.clipboard.writeText(markdown())}>Copy markdown</button>
                 <button className={item} onClick={download}>Download .md</button>
                 <button className={`${item} text-hot-text`} onClick={remove}>Delete</button>
                 <button className={item} onClick={logout}>Logout</button>

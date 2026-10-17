@@ -49,12 +49,15 @@ export const extensions = [
   Phantom,
 ]
 
-export const Editor = forwardRef<EditorHandle, { initial: string; onChange(md: string): void; editable?: boolean; next?: NextBlock | null }>(
+export const Editor = forwardRef<EditorHandle, { initial: string; onChange(read: () => string): void; editable?: boolean; next?: NextBlock | null }>(
   function Editor({ initial, onChange, editable = true, next = null }, ref) {
     const editor = useEditor({
       extensions,
       content: initial,
-      onUpdate: ({ editor }) => onChange(getMarkdown(editor)),
+      // hands over a reader, not the markdown: serialising the whole doc on every keystroke grows Safari's
+      // memory until it reloads the tab. Storage is gone after destroy, so the last save reads the copy taken then.
+      onCreate: ({ editor }) => void editor.on('destroy', () => finals.set(editor, getMarkdown(editor))),
+      onUpdate: ({ editor }) => onChange(() => finals.get(editor) ?? getMarkdown(editor)),
     })
     const scroller = useRef<HTMLDivElement>(null)
     useEffect(() => editor?.setEditable(editable), [editor, editable])
@@ -80,6 +83,9 @@ export const Editor = forwardRef<EditorHandle, { initial: string; onChange(md: s
     )
   },
 )
+
+// markdown of destroyed editors, per instance (StrictMode builds and destroys a throwaway one)
+const finals = new WeakMap<TiptapEditor, string>()
 
 // tiptap-markdown doesn't augment tiptap v3's Storage type
 export const getMarkdown = (editor: TiptapEditor): string =>

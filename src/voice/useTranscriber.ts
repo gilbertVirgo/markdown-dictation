@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Engine } from './engines/types'
-import { isSupported, webspeech } from './engines/webspeech'
+import { isSupported, isWebKit, webspeech } from './engines/webspeech'
 import { openai } from './engines/openai'
 import { deepgram } from './engines/deepgram'
 
@@ -69,7 +69,7 @@ export function useTranscriber(opts: {
     // created synchronously inside the tap so iOS Safari lets it run
     const ctx = typeof AudioContext === 'undefined' ? null : new AudioContext()
     audio.current = ctx
-    const shadowed = engine !== 'webspeech' && isSupported()
+    const shadowed = engine !== 'webspeech' && isSupported() && !isWebKit()
     shadow.current = { heard: [], interim: [], consumed: 0 }
     ENGINES[engine]
       .start({
