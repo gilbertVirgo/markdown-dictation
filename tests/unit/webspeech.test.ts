@@ -42,10 +42,19 @@ describe('webspeech engine', () => {
     r.onend!()
     vi.advanceTimersByTime(250)
     expect(r.start).toHaveBeenCalledTimes(2)
-    webspeech.stop()
-    r.onend!()
+    r.onend!() // ended again without hearing anything: waits longer
     vi.advanceTimersByTime(250)
     expect(r.start).toHaveBeenCalledTimes(2)
+    vi.advanceTimersByTime(250)
+    expect(r.start).toHaveBeenCalledTimes(3)
+    r.onresult!({ resultIndex: 0, results: [result('hi', false)] }) // a result resets the backoff
+    r.onend!()
+    vi.advanceTimersByTime(250)
+    expect(r.start).toHaveBeenCalledTimes(4)
+    webspeech.stop()
+    r.onend!()
+    vi.advanceTimersByTime(8000)
+    expect(r.start).toHaveBeenCalledTimes(4)
   })
 
   it('stops on not-allowed', async () => {
