@@ -2,10 +2,12 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { EditorContent, useEditor, type Editor as TiptapEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
+import Paragraph from '@tiptap/extension-paragraph'
 import { Markdown } from 'tiptap-markdown'
 import Toolbar, { type NextBlock } from './Toolbar'
 import { PendingMark } from './PendingMark'
 import { Indent } from './Indent'
+import type { Node as PMNode } from '@tiptap/pm/model'
 import type { BlockType, Placement } from '../lib/refinePrompt'
 
 export type { BlockType } from '../lib/refinePrompt'
@@ -18,9 +20,26 @@ export type EditorHandle = {
   scrollToEnd(): void
 }
 
+// Markdown collapses blank lines, so an empty paragraph (an extra line break) is written as &nbsp; and emptied again on load
+const BlankParagraph = Paragraph.extend({
+  addStorage: () => ({
+    markdown: {
+      serialize(state: { write(s: string): void; renderInline(n: PMNode): void; closeBlock(n: PMNode): void }, node: PMNode) {
+        if (node.childCount) state.renderInline(node)
+        else state.write('&nbsp;')
+        state.closeBlock(node)
+      },
+      parse: {
+        updateDOM: (el: HTMLElement) => el.querySelectorAll('p').forEach((p) => p.textContent === '\u00a0' && !p.children.length && (p.textContent = '')),
+      },
+    },
+  }),
+})
+
 // Shared with tests/unit/editor.test.ts so both build the same schema.
 export const extensions = [
-  StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false }),
+  StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false, paragraph: false }),
+  BlankParagraph,
   Link.configure({ openOnClick: false }),
   Markdown.configure({ transformPastedText: true, breaks: true }),
   PendingMark,
@@ -61,6 +80,7 @@ export const Editor = forwardRef<EditorHandle, { initial: string; onChange(md: s
 // tiptap-markdown doesn't augment tiptap v3's Storage type
 export const getMarkdown = (editor: TiptapEditor): string =>
   (editor.storage as unknown as { markdown: { getMarkdown(): string } }).markdown.getMarkdown().replace(/\u2003/g, '&emsp;')
+    .replace(/(?:(?:^|\n\n)&nbsp;)+$/, '') // trailing blank lines: nothing to keep apart
 
 // Body text continues the last paragraph; anything else (or a picked block type) starts a new block.
 // Returns 'inline' when joined onto existing text, 'block' when it starts a new block or follows a line break,

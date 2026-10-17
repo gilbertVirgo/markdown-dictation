@@ -202,3 +202,12 @@ it('indent goes at most one level deeper than the block before', () => {
   key('Tab') // top block can't pass level 1; second is already one deeper
   expect(getMarkdown(ed)).toBe('&emsp;&emsp;First\n\n&emsp;&emsp;&emsp;&emsp;Second')
 })
+
+it('extra blank lines between paragraphs survive a markdown round trip', () => {
+  make('')
+  ed.commands.setContent('<p>A</p><p></p><p></p><p>B</p><p></p>')
+  const md = getMarkdown(ed)
+  expect(md).toBe('A\n\n&nbsp;\n\n&nbsp;\n\nB') // trailing blank dropped
+  make(md)
+  expect(ed.getHTML()).toBe('<p>A</p><p></p><p></p><p>B</p>')
+})
