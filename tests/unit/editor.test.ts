@@ -167,3 +167,14 @@ it('indent survives a markdown round trip and carries over on Enter', () => {
   make(md)
   expect(getMarkdown(ed)).toBe(md)
 })
+
+it('Backspace inside the indent removes one whole level', () => {
+  make('')
+  ed.commands.focus()
+  key('Tab')
+  key('Tab')
+  key('Backspace')
+  expect(getMarkdown(ed)).toBe('&emsp;&emsp;')
+  key('Backspace')
+  expect(getMarkdown(ed)).toBe('')
+})

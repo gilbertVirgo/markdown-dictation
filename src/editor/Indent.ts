@@ -23,6 +23,13 @@ export const Indent = Extension.create({
         if (n) this.editor.commands.deleteRange({ from: start, to: start + n })
         return true // never move focus out of the editor
       },
+      // a level is two characters: inside the indent, Backspace drops back to the previous level
+      Backspace: () => {
+        const { $from, empty } = this.editor.state.selection
+        const off = $from.parentOffset
+        if (inList() || !empty || !off || off > leading($from.parent.textContent).length) return false
+        return this.editor.commands.deleteRange({ from: $from.pos - (off % TAB.length || TAB.length), to: $from.pos })
+      },
       // carry the line's indent onto the next line
       Enter: () => {
         const { $from, empty } = this.editor.state.selection
