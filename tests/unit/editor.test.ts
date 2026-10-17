@@ -178,3 +178,15 @@ it('Backspace inside the indent removes one whole level', () => {
   key('Backspace')
   expect(getMarkdown(ed)).toBe('')
 })
+
+it('Tab and Mod-] indent the whole block from mid-text, Mod-[ outdents', () => {
+  make('Hello')
+  ed.commands.focus('end')
+  key('Tab')
+  expect(getMarkdown(ed)).toBe('&emsp;&emsp;Hello')
+  ed.view.dom.dispatchEvent(new KeyboardEvent('keydown', { key: ']', ctrlKey: true, bubbles: true })) // jsdom isn't a Mac: Mod is Ctrl
+  expect(getMarkdown(ed)).toBe('&emsp;&emsp;&emsp;&emsp;Hello')
+  expect(ed.view.dom.querySelector('p')!.style.getPropertyValue('--indent')).toBe('4')
+  ed.view.dom.dispatchEvent(new KeyboardEvent('keydown', { key: '[', ctrlKey: true, bubbles: true }))
+  expect(getMarkdown(ed)).toBe('&emsp;&emsp;Hello')
+})
