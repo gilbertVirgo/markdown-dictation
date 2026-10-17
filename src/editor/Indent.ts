@@ -1,4 +1,5 @@
 import { Extension } from '@tiptap/core'
+import type { Node } from '@tiptap/pm/model'
 import { Plugin, type Transaction } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 
@@ -6,6 +7,7 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view'
 // (which markdown-it decodes back on load, and other markdown renderers show as space).
 export const TAB = '  '
 const leading = (text: string) => text.match(/^ */)![0]
+const level = (text: string) => Math.floor(leading(text).length / TAB.length)
 
 // start of every textblock the selection touches, last first so earlier positions stay valid while editing
 function blocks(tr: Transaction) {
@@ -18,13 +20,36 @@ function blocks(tr: Transaction) {
   return out
 }
 
+// indent level of the last textblock ending before pos (0 at the top of the doc)
+function levelBefore(doc: Node, pos: number) {
+  let l = 0
+  doc.nodesBetween(0, pos, (n, at) => {
+    if (!n.isTextblock) return
+    if (at + n.nodeSize <= pos) l = level(n.textContent)
+    return false
+  })
+  return l
+}
+
 // Lists keep their own Tab/Shift-Tab (nest/un-nest) and Enter: returning false falls through to ListItem.
 export const Indent = Extension.create({
   name: 'indent',
   priority: 1000,
   addKeyboardShortcuts() {
     // raw insertText: insertContent would run the string through tiptap-markdown's parser
-    const indent = () => this.editor.commands.command(({ tr }) => (blocks(tr).forEach((b) => tr.insertText(TAB, b.at)), true))
+    // at most one level deeper than the block before
+    const indent = () =>
+      this.editor.commands.command(({ tr }) => {
+        const bs = blocks(tr).reverse() // document order, so each block sees the one before's new level
+        let prev = bs.length ? levelBefore(tr.doc, bs[0].at - 1) : 0
+        const deeper = bs.map((b) => {
+          const l = level(b.text)
+          prev = l <= prev ? l + 1 : l
+          return prev > l
+        })
+        for (let i = bs.length - 1; i >= 0; i--) if (deeper[i]) tr.insertText(TAB, bs[i].at)
+        return true
+      })
     const outdent = () =>
       this.editor.commands.command(({ tr }) => {
         for (const b of blocks(tr)) tr.delete(b.at, b.at + Math.min(leading(b.text).length, TAB.length))

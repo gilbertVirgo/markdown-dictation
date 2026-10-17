@@ -169,24 +169,36 @@ it('indent survives a markdown round trip and carries over on Enter', () => {
 })
 
 it('Backspace inside the indent removes one whole level', () => {
-  make('')
-  ed.commands.focus()
-  key('Tab')
+  make('&emsp;&emsp;Top')
+  ed.commands.focus('end')
+  key('Enter') // carries one level
   key('Tab')
   key('Backspace')
-  expect(getMarkdown(ed)).toBe('&emsp;&emsp;')
+  expect(getMarkdown(ed)).toBe('&emsp;&emsp;Top\n\n&emsp;&emsp;')
   key('Backspace')
-  expect(getMarkdown(ed)).toBe('')
+  expect(getMarkdown(ed)).toBe('&emsp;&emsp;Top')
 })
 
 it('Tab and Mod-] indent the whole block from mid-text, Mod-[ outdents', () => {
-  make('Hello')
+  make('&emsp;&emsp;&emsp;&emsp;Top\n\nHello')
   ed.commands.focus('end')
   key('Tab')
-  expect(getMarkdown(ed)).toBe('&emsp;&emsp;Hello')
+  expect(getMarkdown(ed)).toContain('\n\n&emsp;&emsp;Hello')
   ed.view.dom.dispatchEvent(new KeyboardEvent('keydown', { key: ']', ctrlKey: true, bubbles: true })) // jsdom isn't a Mac: Mod is Ctrl
-  expect(getMarkdown(ed)).toBe('&emsp;&emsp;&emsp;&emsp;Hello')
-  expect(ed.view.dom.querySelector('p')!.style.getPropertyValue('--indent')).toBe('4')
+  expect(getMarkdown(ed)).toContain('\n\n&emsp;&emsp;&emsp;&emsp;Hello')
+  expect(ed.view.dom.querySelectorAll('p')[1]!.style.getPropertyValue('--indent')).toBe('4')
   ed.view.dom.dispatchEvent(new KeyboardEvent('keydown', { key: '[', ctrlKey: true, bubbles: true }))
-  expect(getMarkdown(ed)).toBe('&emsp;&emsp;Hello')
+  expect(getMarkdown(ed)).toContain('\n\n&emsp;&emsp;Hello')
+})
+
+it('indent goes at most one level deeper than the block before', () => {
+  make('&emsp;&emsp;First\n\nSecond')
+  ed.commands.focus('end')
+  key('Tab')
+  key('Tab')
+  key('Tab')
+  expect(getMarkdown(ed)).toBe('&emsp;&emsp;First\n\n&emsp;&emsp;&emsp;&emsp;Second')
+  ed.commands.selectAll()
+  key('Tab') // top block can't pass level 1; second is already one deeper
+  expect(getMarkdown(ed)).toBe('&emsp;&emsp;First\n\n&emsp;&emsp;&emsp;&emsp;Second')
 })
