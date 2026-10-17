@@ -11,6 +11,7 @@ import type { BlockType, Placement } from '../lib/refinePrompt'
 export type { BlockType } from '../lib/refinePrompt'
 export type EditorHandle = {
   getMarkdown(): string
+  getText(): string
   insertChunk(text: string, block: BlockType, pendingId: string): Placement | null
   replacePending(pendingId: string, text: string): void
   clearPending(pendingId: string): void
@@ -38,6 +39,7 @@ export const Editor = forwardRef<EditorHandle, { initial: string; onChange(md: s
 
     useImperativeHandle(ref, () => ({
       getMarkdown: () => (editor ? getMarkdown(editor) : initial),
+      getText: () => editor?.getText({ blockSeparator: '\n' }) ?? '',
       insertChunk: (text, block, pendingId) => (editor ? insertChunk(editor, text, block, pendingId) : null),
       replacePending: (pendingId, text) => editor && replacePending(editor, pendingId, text),
       clearPending: (pendingId) => editor && clearPending(editor, pendingId),
