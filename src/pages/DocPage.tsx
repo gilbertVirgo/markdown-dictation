@@ -113,6 +113,7 @@ export default function DocPage() {
     )
   }, [])
 
+  const onPhantom = useCallback((text: string) => editor.current?.setPhantom(text), [])
   const vocabulary = useCallback(() => extractVocabulary(latest.current), [])
   const onFinal = useCallback((text: string) => (onChunk(text, nextRef.current), pickNext('body')), [onChunk, pickNext])
   const onActive = useCallback((a: boolean) => (setDictating(a), a || pickNext('body')), [pickNext])
@@ -120,9 +121,9 @@ export default function DocPage() {
   useEffect(() => {
     if (!import.meta.env.DEV) return
     const w = window as unknown as { __dictate?: unknown }
-    w.__dictate = { insertChunk: onChunk }
+    w.__dictate = { insertChunk: onChunk, phantom: onPhantom }
     return () => void delete w.__dictate
-  }, [onChunk])
+  }, [onChunk, onPhantom])
 
   const title = () => deriveTitle(latest.current)
 
@@ -214,7 +215,7 @@ export default function DocPage() {
       {doc && <Editor key={id} ref={editor} initial={doc.markdown} onChange={onChange} editable={!reading} next={dictating ? { block: nextBlock, pick: pickNext } : null} />}
 
       {/* hidden, not unmounted: a live mic and in-flight refines keep working */}
-      {doc && <div className={reading ? 'hidden' : 'contents'}><VoicePanel onFinal={onFinal} onActive={onActive} next={nextBlock} vocabulary={vocabulary} settings={settings} /></div>}
+      {doc && <div className={reading ? 'hidden' : 'contents'}><VoicePanel onFinal={onFinal} onPhantom={onPhantom} onActive={onActive} next={nextBlock} vocabulary={vocabulary} settings={settings} /></div>}
 
       <SettingsDialog ref={settingsDialog} settings={settings} update={updateSettings} />
     </main>

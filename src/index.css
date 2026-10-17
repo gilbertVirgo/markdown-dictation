@@ -67,6 +67,8 @@ body { background: var(--c50); color: var(--ink); font-family: var(--font-sans);
 .ProseMirror a { color: var(--hot-text); text-decoration: underline; }
 /* dictated chunk waiting on Claude: pulses until replaced */
 .ProseMirror [data-pending] { animation: pending 1.4s ease-in-out infinite; }
+/* heard by the browser, not yet transcribed (Phantom.ts) */
+.ProseMirror .phantom { color: var(--mute); }
 
 :focus-visible { outline: 2px solid var(--hot-text); outline-offset: 2px; }
 .ProseMirror:focus-visible { outline: none; }

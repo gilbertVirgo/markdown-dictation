@@ -2,6 +2,7 @@
 import { afterEach, expect, it } from 'vitest'
 import { Editor } from '@tiptap/react'
 import { extensions, getMarkdown, insertChunk, replacePending } from '../../src/editor/Editor'
+import { phantomKey } from '../../src/editor/Phantom'
 
 let ed: Editor
 const make = (content = '') => (ed = new Editor({ extensions, content }))
@@ -210,4 +211,13 @@ it('extra blank lines between paragraphs survive a markdown round trip', () => {
   expect(md).toBe('A\n\n&nbsp;\n\n&nbsp;\n\nB') // trailing blank dropped
   make(md)
   expect(ed.getHTML()).toBe('<p>A</p><p></p><p></p><p>B</p>')
+})
+
+it('phantom text shows after the last paragraph but is never saved', () => {
+  make('Typed.')
+  ed.view.dispatch(ed.state.tr.setMeta(phantomKey, 'heard words'))
+  expect(ed.view.dom.querySelector('.phantom')!.textContent).toBe(' heard words')
+  expect(getMarkdown(ed)).toBe('Typed.')
+  ed.view.dispatch(ed.state.tr.setMeta(phantomKey, ''))
+  expect(ed.view.dom.querySelector('.phantom')).toBeNull()
 })

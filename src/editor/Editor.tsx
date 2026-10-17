@@ -7,6 +7,7 @@ import { Markdown } from 'tiptap-markdown'
 import Toolbar, { type NextBlock } from './Toolbar'
 import { PendingMark } from './PendingMark'
 import { Indent } from './Indent'
+import { Phantom, phantomKey } from './Phantom'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import type { BlockType, Placement } from '../lib/refinePrompt'
 
@@ -18,6 +19,7 @@ export type EditorHandle = {
   replacePending(pendingId: string, text: string): void
   clearPending(pendingId: string): void
   scrollToEnd(): void
+  setPhantom(text: string): void
 }
 
 // Markdown collapses blank lines, so an empty paragraph (an extra line break) is written as &nbsp; and emptied again on load
@@ -44,6 +46,7 @@ export const extensions = [
   Markdown.configure({ transformPastedText: true, breaks: true }),
   PendingMark,
   Indent,
+  Phantom,
 ]
 
 export const Editor = forwardRef<EditorHandle, { initial: string; onChange(md: string): void; editable?: boolean; next?: NextBlock | null }>(
@@ -62,6 +65,7 @@ export const Editor = forwardRef<EditorHandle, { initial: string; onChange(md: s
       insertChunk: (text, block, pendingId) => (editor ? insertChunk(editor, text, block, pendingId) : null),
       replacePending: (pendingId, text) => editor && replacePending(editor, pendingId, text),
       clearPending: (pendingId) => editor && clearPending(editor, pendingId),
+      setPhantom: (text) => editor && !editor.isDestroyed && editor.view.dispatch(editor.state.tr.setMeta(phantomKey, text)),
       scrollToEnd: () => scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' }),
     }), [editor, initial])
 
