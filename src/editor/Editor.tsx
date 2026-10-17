@@ -8,6 +8,8 @@ import Toolbar, { type NextBlock } from './Toolbar'
 import { PendingMark } from './PendingMark'
 import { Indent } from './Indent'
 import { Phantom, phantomKey } from './Phantom'
+import { Suggestions, anchorTr, dropTr, headingBlocks, keepTr, suggestTr, suggestionsKey } from './Suggestions'
+import type { HeadingBlock, HeadingSuggestion } from '../lib/headingsPrompt'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import type { BlockType, Placement } from '../lib/refinePrompt'
 
@@ -20,6 +22,11 @@ export type EditorHandle = {
   clearPending(pendingId: string): void
   scrollToEnd(): void
   setPhantom(text: string): void
+  // suggested headings: anchor + read the blocks before asking, then show, keep or drop the reply
+  headingBlocks(): HeadingBlock[]
+  suggestHeadings(list: HeadingSuggestion[]): void
+  keepHeadings(): void
+  dropHeadings(): void
 }
 
 // Markdown collapses blank lines, so an empty paragraph (an extra line break) is written as &nbsp; and emptied again on load
@@ -47,10 +54,11 @@ export const extensions = [
   PendingMark,
   Indent,
   Phantom,
+  Suggestions,
 ]
 
-export const Editor = forwardRef<EditorHandle, { initial: string; onChange(read: () => string): void; editable?: boolean; next?: NextBlock | null }>(
-  function Editor({ initial, onChange, editable = true, next = null }, ref) {
+export const Editor = forwardRef<EditorHandle, { initial: string; onChange(read: () => string): void; onSuggestions?(count: number): void; editable?: boolean; next?: NextBlock | null }>(
+  function Editor({ initial, onChange, onSuggestions, editable = true, next = null }, ref) {
     const editor = useEditor({
       extensions,
       content: initial,
@@ -58,6 +66,7 @@ export const Editor = forwardRef<EditorHandle, { initial: string; onChange(read:
       // memory until it reloads the tab. Storage is gone after destroy, so the last save reads the copy taken then.
       onCreate: ({ editor }) => void editor.on('destroy', () => finals.set(editor, getMarkdown(editor))),
       onUpdate: ({ editor }) => onChange(() => finals.get(editor) ?? getMarkdown(editor)),
+      onTransaction: ({ editor }) => onSuggestions?.(suggestionsKey.getState(editor.state)?.items.length ?? 0),
     })
     const scroller = useRef<HTMLDivElement>(null)
     useEffect(() => editor?.setEditable(editable), [editor, editable])
@@ -69,6 +78,14 @@ export const Editor = forwardRef<EditorHandle, { initial: string; onChange(read:
       replacePending: (pendingId, text) => editor && replacePending(editor, pendingId, text),
       clearPending: (pendingId) => editor && clearPending(editor, pendingId),
       setPhantom: (text) => editor && !editor.isDestroyed && editor.view.dispatch(editor.state.tr.setMeta(phantomKey, text)),
+      headingBlocks: () => {
+        if (!editor) return []
+        editor.view.dispatch(anchorTr(editor.state))
+        return headingBlocks(editor.state.doc)
+      },
+      suggestHeadings: (list) => editor?.view.dispatch(suggestTr(editor.state, list)),
+      keepHeadings: () => editor?.view.dispatch(keepTr(editor.state)),
+      dropHeadings: () => editor?.view.dispatch(dropTr(editor.state)),
       scrollToEnd: () => scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' }),
     }), [editor, initial])
 

@@ -3,6 +3,7 @@ import { afterEach, expect, it } from 'vitest'
 import { Editor } from '@tiptap/react'
 import { extensions, getMarkdown, insertChunk, replacePending } from '../../src/editor/Editor'
 import { phantomKey } from '../../src/editor/Phantom'
+import { anchorTr, dropTr, headingBlocks, keepTr, suggestTr, suggestionsKey } from '../../src/editor/Suggestions'
 
 let ed: Editor
 const make = (content = '') => (ed = new Editor({ extensions, content }))
@@ -220,4 +221,36 @@ it('phantom text shows after the last paragraph but is never saved', () => {
   expect(getMarkdown(ed)).toBe('Typed.')
   ed.view.dispatch(ed.state.tr.setMeta(phantomKey, ''))
   expect(ed.view.dom.querySelector('.phantom')).toBeNull()
+})
+
+const items = () => suggestionsKey.getState(ed.state)!.items
+
+it('suggested headings land on the anchored blocks even after edits above them, and are never saved', () => {
+  make('# Title\n\nOne.\n\nTwo.\n\nThree.')
+  expect(headingBlocks(ed.state.doc).map((b) => b.type)).toEqual(['h1', 'p', 'p', 'p'])
+  ed.view.dispatch(anchorTr(ed.state))
+  ed.commands.insertContentAt(ed.state.doc.child(0).nodeSize + 1, 'Typed meanwhile. ') // into "One." while waiting
+  ed.view.dispatch(suggestTr(ed.state, [{ before: 2, level: 2, text: 'Part two' }, { before: 3, level: 3, text: 'Detail' }]))
+  expect(items().map((i) => i.text)).toEqual(['Part two', 'Detail'])
+  expect(ed.view.dom.querySelectorAll('.suggested-heading h2, .suggested-heading h3').length).toBe(2)
+  expect(getMarkdown(ed)).toBe('# Title\n\nTyped meanwhile. One.\n\nTwo.\n\nThree.')
+  ed.view.dispatch(keepTr(ed.state, [items()[0].id]))
+  expect(getMarkdown(ed)).toBe('# Title\n\nTyped meanwhile. One.\n\n## Part two\n\nTwo.\n\nThree.')
+  expect(items().map((i) => i.text)).toEqual(['Detail'])
+  ed.view.dispatch(dropTr(ed.state))
+  expect(items()).toEqual([])
+  expect(ed.view.dom.querySelector('.suggested-heading')).toBeNull()
+})
+
+it('keep all inserts every heading; a suggestion goes when its block is deleted', () => {
+  make('Intro.\n\nA.\n\nB.\n\nC.')
+  ed.view.dispatch(anchorTr(ed.state))
+  ed.view.dispatch(suggestTr(ed.state, [{ before: 1, level: 2, text: 'First' }, { before: 2, level: 3, text: 'Gone' }, { before: 3, level: 2, text: 'Last' }]))
+  const b = ed.state.doc.child(0).nodeSize + ed.state.doc.child(1).nodeSize
+  ed.view.dispatch(ed.state.tr.delete(b, b + ed.state.doc.child(2).nodeSize)) // delete "B."
+  expect(items().map((i) => i.text)).toEqual(['First', 'Last'])
+  ed.view.dispatch(keepTr(ed.state))
+  expect(getMarkdown(ed)).toBe('Intro.\n\n## First\n\nA.\n\n## Last\n\nC.')
+  ed.commands.undo() // kept headings are ordinary edits
+  expect(getMarkdown(ed)).not.toContain('##')
 })
