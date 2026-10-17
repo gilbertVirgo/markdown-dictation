@@ -55,7 +55,9 @@ body { background: var(--c50); color: var(--ink); font-family: var(--font-sans);
 @media (min-width: 1024px) { .ProseMirror > h1:first-child { font-size: 2.6em; } }
 .ProseMirror h2 { font-size: 1.4em; }
 .ProseMirror h3 { font-size: 1.15em; }
-.ProseMirror p { text-wrap: pretty; margin: 0.75em 0; }
+.ProseMirror p { margin: 0.75em 0; }
+/* Settings > Pretty line breaks: avoids one-word last lines, but Safari re-evens whole paragraphs, so off by default */
+[data-pretty] .ProseMirror p { text-wrap: pretty; }
 .ProseMirror blockquote { background: var(--c100); padding: 0.5em 0.9em; margin: 0.75em 0; }
 .ProseMirror ul { list-style: disc; padding-left: 1.25em; }
 .ProseMirror ol { list-style: decimal; padding-left: 1.25em; }

@@ -160,7 +160,7 @@ export default function DocPage() {
     // fixed-height column sized to the visible viewport: header and footer stay put, only the editor scrolls.
     // Desktop: sits right of Shell's fixed 280px sidebar, unless that's hidden.
     // Reading: read-only, no toolbar/mic/chrome, bigger type.
-    <main data-size={settings.size} data-reading={reading || undefined} data-wide={wide || undefined} className={`fixed inset-x-0 top-[var(--vvt,0px)] flex h-[var(--vvh,100dvh)] flex-col overflow-hidden bg-c50 text-ink ${wide ? '' : 'lg:left-70'}`}>
+    <main data-size={settings.size} data-reading={reading || undefined} data-wide={wide || undefined} data-pretty={settings.pretty || undefined} className={`fixed inset-x-0 top-[var(--vvt,0px)] flex h-[var(--vvh,100dvh)] flex-col overflow-hidden bg-c50 text-ink ${wide ? '' : 'lg:left-70'}`}>
       {reading ? (
         <header className="shrink-0 pt-[env(safe-area-inset-top)]">
           <div className="flex justify-end px-1 lg:px-4">
