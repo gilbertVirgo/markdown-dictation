@@ -1,10 +1,11 @@
-import { forwardRef, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { EditorContent, useEditor, type Editor as TiptapEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import { Markdown } from 'tiptap-markdown'
-import Toolbar from './Toolbar'
+import Toolbar, { type NextBlock } from './Toolbar'
 import { PendingMark } from './PendingMark'
+import { Indent } from './Indent'
 import type { BlockType, Placement } from '../lib/refinePrompt'
 
 export type { BlockType } from '../lib/refinePrompt'
@@ -22,16 +23,18 @@ export const extensions = [
   Link.configure({ openOnClick: false }),
   Markdown.configure({ transformPastedText: true, breaks: true }),
   PendingMark,
+  Indent,
 ]
 
-export const Editor = forwardRef<EditorHandle, { initial: string; onChange(md: string): void }>(
-  function Editor({ initial, onChange }, ref) {
+export const Editor = forwardRef<EditorHandle, { initial: string; onChange(md: string): void; editable?: boolean; next?: NextBlock | null }>(
+  function Editor({ initial, onChange, editable = true, next = null }, ref) {
     const editor = useEditor({
       extensions,
       content: initial,
       onUpdate: ({ editor }) => onChange(getMarkdown(editor)),
     })
     const scroller = useRef<HTMLDivElement>(null)
+    useEffect(() => editor?.setEditable(editable), [editor, editable])
 
     useImperativeHandle(ref, () => ({
       getMarkdown: () => (editor ? getMarkdown(editor) : initial),
@@ -47,7 +50,7 @@ export const Editor = forwardRef<EditorHandle, { initial: string; onChange(md: s
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto [scroll-padding-bottom:3rem]">
           <EditorContent editor={editor} className="rise mx-auto w-full max-w-[42rem] px-4 py-4 lg:px-8 lg:py-10" />
         </div>
-        {editor && <Toolbar editor={editor} />}
+        {editor && editable && <Toolbar editor={editor} next={next} />}
       </>
     )
   },
@@ -55,7 +58,7 @@ export const Editor = forwardRef<EditorHandle, { initial: string; onChange(md: s
 
 // tiptap-markdown doesn't augment tiptap v3's Storage type
 export const getMarkdown = (editor: TiptapEditor): string =>
-  (editor.storage as unknown as { markdown: { getMarkdown(): string } }).markdown.getMarkdown()
+  (editor.storage as unknown as { markdown: { getMarkdown(): string } }).markdown.getMarkdown().replace(/\u2003/g, '&emsp;')
 
 // Body text continues the last paragraph; anything else (or a picked block type) starts a new block.
 // Returns 'inline' when joined onto existing text, 'block' when it starts a new block or follows a line break,

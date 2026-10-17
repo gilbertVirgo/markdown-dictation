@@ -10,7 +10,7 @@ import { useSettings } from '../lib/settings'
 import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight'
 import { SettingsDialog } from '../ui/SettingsDialog'
 import { Dots, Loader } from '../ui/Loader'
-import { ArrowLeft, MoreVertical, Settings as SettingsIcon } from '../ui/icons'
+import { ArrowLeft, BookOpen, MoreVertical, PanelLeft, Settings as SettingsIcon, X } from '../ui/icons'
 
 type Doc = { id: string; title: string; markdown: string; updatedAt: string }
 
@@ -22,6 +22,12 @@ export default function DocPage() {
   const [doc, setDoc] = useState<Doc | null>(null)
   const [failed, setFailed] = useState(false)
   const [refineError, setRefineError] = useState<string | null>(null)
+  const [reading, setReading] = useState(false)
+  // next dictated chunk's block type, picked in the toolbar while the mic is on; ref so back-to-back finals don't both use it
+  const [nextBlock, setNextBlock] = useState<BlockType>('body')
+  const nextRef = useRef(nextBlock)
+  const pickNext = useCallback((b: BlockType) => setNextBlock((nextRef.current = b)), [])
+  const [dictating, setDictating] = useState(false)
   const editor = useRef<EditorHandle>(null)
   // Latest markdown kept in a ref so unmount flush works after the editor ref is detached.
   const latest = useRef('')
@@ -52,6 +58,13 @@ export default function DocPage() {
       document.removeEventListener('keydown', close)
     }
   }, [])
+
+  useEffect(() => {
+    if (!reading) return
+    const exit = (e: KeyboardEvent) => e.key === 'Escape' && setReading(false)
+    document.addEventListener('keydown', exit)
+    return () => document.removeEventListener('keydown', exit)
+  }, [reading])
 
   useEffect(() => {
     setDoc(null)
@@ -94,6 +107,8 @@ export default function DocPage() {
   }, [])
 
   const vocabulary = useCallback(() => extractVocabulary(latest.current), [])
+  const onFinal = useCallback((text: string) => (onChunk(text, nextRef.current), pickNext('body')), [onChunk, pickNext])
+  const onActive = useCallback((a: boolean) => (setDictating(a), a || pickNext('body')), [pickNext])
 
   useEffect(() => {
     if (!import.meta.env.DEV) return
@@ -131,47 +146,67 @@ export default function DocPage() {
   }
 
   const item = 't-small block w-full min-h-11 px-4 text-left hover:bg-c200'
+  const iconBtn = 'flex min-h-11 min-w-11 items-center justify-center text-mute hover:text-ink'
+  const wide = reading || !settings.sidebar // index.css hides the sidebar off data-wide
 
   return (
     // fixed-height column sized to the visible viewport: header and footer stay put, only the editor scrolls.
-    // Desktop: sits right of Shell's fixed 280px sidebar.
-    <main data-size={settings.size} className="fixed inset-x-0 top-[var(--vvt,0px)] flex h-[var(--vvh,100dvh)] flex-col overflow-hidden bg-c50 text-ink lg:left-70">
-      <header className="shrink-0 bg-c100 pt-[env(safe-area-inset-top)] lg:bg-c50">
-        <div className="flex items-center gap-1 px-1 lg:px-4">
-          <button onClick={() => navigate('/')} aria-label="Back" className="flex min-h-11 min-w-11 items-center justify-center lg:hidden">
-            <ArrowLeft />
-          </button>
-          {/* keyed so each status change rises in like a ticker */}
-          <span key={status} className={`t-small rise px-3 lg:ml-auto ${status === 'error' ? 'text-hot-text' : 'text-mute'}`}>
-            {status === 'saving' ? <>Saving<Dots /></> : STATUS[status]}
-          </span>
-          {refineError && (
-            <span role="alert" title={refineError} className="t-small min-w-0 line-clamp-2 break-words px-3 text-hot-text">
-              Refine failed: {refineError}
+    // Desktop: sits right of Shell's fixed 280px sidebar, unless that's hidden.
+    // Reading: read-only, no toolbar/mic/chrome, bigger type.
+    <main data-size={settings.size} data-reading={reading || undefined} data-wide={wide || undefined} className={`fixed inset-x-0 top-[var(--vvt,0px)] flex h-[var(--vvh,100dvh)] flex-col overflow-hidden bg-c50 text-ink ${wide ? '' : 'lg:left-70'}`}>
+      {reading ? (
+        <header className="shrink-0 pt-[env(safe-area-inset-top)]">
+          <div className="flex justify-end px-1 lg:px-4">
+            <button onClick={() => setReading(false)} aria-label="Exit reading mode" className={iconBtn}>
+              <X />
+            </button>
+          </div>
+        </header>
+      ) : (
+        <header className="shrink-0 bg-c100 pt-[env(safe-area-inset-top)] lg:bg-c50">
+          <div className="flex items-center gap-1 px-1 lg:px-4">
+            <button onClick={() => navigate('/')} aria-label="Back" className="flex min-h-11 min-w-11 items-center justify-center lg:hidden">
+              <ArrowLeft />
+            </button>
+            <button onClick={() => updateSettings({ sidebar: !settings.sidebar })} aria-label={settings.sidebar ? 'Hide sidebar' : 'Show sidebar'} className={`${iconBtn} hidden lg:flex`}>
+              <PanelLeft />
+            </button>
+            {/* keyed so each status change rises in like a ticker */}
+            <span key={status} className={`t-small rise px-3 lg:ml-auto ${status === 'error' ? 'text-hot-text' : 'text-mute'}`}>
+              {status === 'saving' ? <>Saving<Dots /></> : STATUS[status]}
             </span>
-          )}
-          <button onClick={() => settingsDialog.current?.showModal()} aria-label="Settings" className="ml-auto flex min-h-11 min-w-11 items-center justify-center text-mute hover:text-ink lg:ml-0">
-            <SettingsIcon />
-          </button>
-          <details ref={menu} className="relative" onClick={(e) => (e.target as HTMLElement).closest('button') && e.currentTarget.removeAttribute('open')}>
-            <summary aria-label="Menu" className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center text-mute hover:text-ink [&::-webkit-details-marker]:hidden">
-              <MoreVertical />
-            </summary>
-            <div className="rise absolute top-full right-0 z-20 w-48 bg-c100 py-1" style={{ animationDuration: '.22s' }}>
-              <button className={item} onClick={() => navigator.clipboard.writeText(latest.current)}>Copy markdown</button>
-              <button className={item} onClick={download}>Download .md</button>
-              <button className={`${item} text-hot-text`} onClick={remove}>Delete</button>
-              <button className={item} onClick={logout}>Logout</button>
-            </div>
-          </details>
-        </div>
-      </header>
+            {refineError && (
+              <span role="alert" title={refineError} className="t-small min-w-0 line-clamp-2 break-words px-3 text-hot-text">
+                Refine failed: {refineError}
+              </span>
+            )}
+            <button onClick={() => setReading(true)} aria-label="Reading mode" className={`${iconBtn} ml-auto lg:ml-0`}>
+              <BookOpen />
+            </button>
+            <button onClick={() => settingsDialog.current?.showModal()} aria-label="Settings" className={iconBtn}>
+              <SettingsIcon />
+            </button>
+            <details ref={menu} className="relative" onClick={(e) => (e.target as HTMLElement).closest('button') && e.currentTarget.removeAttribute('open')}>
+              <summary aria-label="Menu" className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center text-mute hover:text-ink [&::-webkit-details-marker]:hidden">
+                <MoreVertical />
+              </summary>
+              <div className="rise absolute top-full right-0 z-20 w-48 bg-c100 py-1" style={{ animationDuration: '.22s' }}>
+                <button className={item} onClick={() => navigator.clipboard.writeText(latest.current)}>Copy markdown</button>
+                <button className={item} onClick={download}>Download .md</button>
+                <button className={`${item} text-hot-text`} onClick={remove}>Delete</button>
+                <button className={item} onClick={logout}>Logout</button>
+              </div>
+            </details>
+          </div>
+        </header>
+      )}
 
       {!doc && !failed && <Loader label="Opening" />}
       {failed && <p className="t-small flex-1 p-8 text-center text-mute">Couldn’t load this document.</p>}
-      {doc && <Editor key={id} ref={editor} initial={doc.markdown} onChange={onChange} />}
+      {doc && <Editor key={id} ref={editor} initial={doc.markdown} onChange={onChange} editable={!reading} next={dictating ? { block: nextBlock, pick: pickNext } : null} />}
 
-      {doc && <VoicePanel onChunk={onChunk} vocabulary={vocabulary} settings={settings} />}
+      {/* hidden, not unmounted: a live mic and in-flight refines keep working */}
+      {doc && <div className={reading ? 'hidden' : 'contents'}><VoicePanel onFinal={onFinal} onActive={onActive} next={nextBlock} vocabulary={vocabulary} settings={settings} /></div>}
 
       <SettingsDialog ref={settingsDialog} settings={settings} update={updateSettings} />
     </main>
