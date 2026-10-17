@@ -56,9 +56,7 @@ body { background: var(--c50); color: var(--ink); font-family: var(--font-sans);
 .ProseMirror h2 { font-size: 1.4em; }
 .ProseMirror h3 { font-size: 1.15em; }
 .ProseMirror p { text-wrap: pretty; margin: 0.75em 0; }
-.ProseMirror blockquote { background: var(--c100); padding: 0.5em 0.9em; margin: 0.75em 0; font-style: italic; }
-/* italic inside an italic quote flips back to roman, so it still reads as emphasis */
-.ProseMirror blockquote em { font-style: normal; }
+.ProseMirror blockquote { background: var(--c100); padding: 0.5em 0.9em; margin: 0.75em 0; }
 .ProseMirror ul { list-style: disc; padding-left: 1.25em; }
 .ProseMirror ol { list-style: decimal; padding-left: 1.25em; }
 .ProseMirror li p { margin: 0.25em 0; }
