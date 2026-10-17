@@ -152,3 +152,18 @@ it('a lone "~" keeps the raw text and the previous punctuation', () => {
   replacePending(ed, 'a', '~')
   expect(getMarkdown(ed)).toBe('Rebuilt. um')
 })
+
+const key = (key: string) => ed.view.dom.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+
+it('indent survives a markdown round trip and carries over on Enter', () => {
+  make('')
+  ed.commands.focus()
+  key('Tab')
+  ed.commands.insertContent('First')
+  key('Enter')
+  ed.commands.insertContent('Second')
+  const md = getMarkdown(ed)
+  expect(md).toBe('&emsp;&emsp;First\n\n&emsp;&emsp;Second')
+  make(md)
+  expect(getMarkdown(ed)).toBe(md)
+})
