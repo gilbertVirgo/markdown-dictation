@@ -8,8 +8,9 @@ import { Mic } from '../ui/icons'
 const NAMES: Record<BlockType, string> = { h1: 'Heading 1', h2: 'Heading 2', h3: 'Heading 3', body: 'Body', quote: 'Quote' }
 
 // The next block's type is picked in the editor toolbar (DocPage owns it); this panel only reports it.
-export function VoicePanel({ onFinal, onActive, next, vocabulary, settings }: {
+export function VoicePanel({ onFinal, onPhantom, onActive, next, vocabulary, settings }: {
   onFinal(text: string): void
+  onPhantom(text: string): void
   onActive(active: boolean): void
   next: BlockType
   vocabulary: () => string[]
@@ -22,6 +23,7 @@ export function VoicePanel({ onFinal, onActive, next, vocabulary, settings }: {
     lang: settings.lang,
     vocabulary,
     onFinal,
+    onPhantom,
     onLevel(level) {
       if (ring.current) ring.current.style.transform = `scale(${1 + level * 0.45})`
     },

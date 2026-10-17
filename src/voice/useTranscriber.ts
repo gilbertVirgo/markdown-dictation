@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Engine } from './engines/types'
-import { webspeech } from './engines/webspeech'
+import { isSupported, webspeech } from './engines/webspeech'
 import { openai } from './engines/openai'
 import { deepgram } from './engines/deepgram'
 
@@ -13,6 +13,7 @@ export function useTranscriber(opts: {
   vocabulary: () => string[]
   onFinal(text: string): void
   onLevel?(level: number): void // 0..1 mic input level, per animation frame
+  onPhantom?(text: string): void // words heard but not yet final, for instant feedback in the editor
 }): {
   live: boolean
   connecting: boolean
@@ -31,6 +32,14 @@ export function useTranscriber(opts: {
   latest.current = opts
   const audio = useRef<AudioContext | null>(null)
   const raf = useRef(0)
+  // Phantoms: the slower engines (Deepgram, OpenAI) are shadowed by the free browser recognizer, which shows words first.
+  // heard = its words so far, consumed = how many of them the main engine has since finalised.
+  const shadow = useRef({ heard: [] as string[], interim: [] as string[], consumed: 0 })
+  const showPhantom = useCallback(() => {
+    const s = shadow.current
+    latest.current.onPhantom?.([...s.heard, ...s.interim].slice(s.consumed).join(' '))
+  }, [])
+  const words = (t: string) => t.split(/\s+/).filter(Boolean)
 
   const stopMeter = useCallback(() => {
     cancelAnimationFrame(raf.current)
@@ -42,6 +51,9 @@ export function useTranscriber(opts: {
   const stop = useCallback(() => {
     call.current++
     ENGINES[engine].stop()
+    if (engine !== 'webspeech') webspeech.stop()
+    shadow.current = { heard: [], interim: [], consumed: 0 }
+    latest.current.onPhantom?.('')
     stopMeter()
     setLive(false)
     setConnecting(false)
@@ -57,12 +69,33 @@ export function useTranscriber(opts: {
     // created synchronously inside the tap so iOS Safari lets it run
     const ctx = typeof AudioContext === 'undefined' ? null : new AudioContext()
     audio.current = ctx
+    const shadowed = engine !== 'webspeech' && isSupported()
+    shadow.current = { heard: [], interim: [], consumed: 0 }
     ENGINES[engine]
       .start({
         lang,
         vocabulary: () => latest.current.vocabulary(),
         onStream(stream) {
-          if (call.current !== me || !ctx) return
+          if (call.current !== me) return
+          // after the main engine has the mic, so the two permission prompts don't race; best effort, errors ignored
+          if (shadowed)
+            void webspeech.start({
+              lang,
+              vocabulary: () => [],
+              onFinal(text) {
+                if (call.current !== me) return
+                shadow.current.heard.push(...words(text))
+                shadow.current.interim = []
+                showPhantom()
+              },
+              onInterim(text) {
+                if (call.current !== me) return
+                shadow.current.interim = words(text)
+                showPhantom()
+              },
+              onError() {},
+            })
+          if (!ctx) return
           const analyser = ctx.createAnalyser()
           analyser.fftSize = 256
           analyser.smoothingTimeConstant = 0.6
@@ -80,10 +113,19 @@ export function useTranscriber(opts: {
         onFinal(text) {
           setInterim('')
           if (!failed && call.current === me) setError(null) // transient error recovered
+          if (engine === 'webspeech') latest.current.onPhantom?.('')
+          else if (shadowed) {
+            // drop as many phantom words as the final has; between the browser's phrases, rebase so word-count drift can't build up
+            const s = shadow.current
+            s.consumed += words(text).length
+            if (!s.interim.length) shadow.current = { heard: s.heard.slice(s.consumed), interim: [], consumed: 0 }
+            showPhantom()
+          }
           latest.current.onFinal(text)
         },
         onInterim(text) {
           setInterim(text)
+          if (!shadowed) latest.current.onPhantom?.(text) // no browser recognizer: the engine's own interim is the phantom
         },
         onError(msg, fatal = true) {
           if (call.current !== me) return
@@ -100,7 +142,7 @@ export function useTranscriber(opts: {
         () => call.current === me && (setConnecting(false), setLive(!failed)),
         (e: Error) => call.current === me && (setConnecting(false), setError(e.message), stopMeter(), setLive(false)),
       )
-  }, [engine, lang, stopMeter])
+  }, [engine, lang, stopMeter, showPhantom])
 
   // stop on unmount, and stop the old engine when the engine changes (stop is recreated)
   useEffect(() => () => stop(), [stop])
