@@ -121,7 +121,7 @@ export default function DocPage() {
 
   function download() {
     const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([latest.current], { type: 'text/markdown' }))
+    a.href = URL.createObjectURL(new Blob([latest.current], { type: 'text/markdown;charset=utf-8' }))
     a.download = `${title()}.md`
     a.click()
     setTimeout(() => URL.revokeObjectURL(a.href), 0)
