@@ -113,8 +113,9 @@ export function useTranscriber(opts: {
         onFinal(text) {
           setInterim('')
           if (!failed && call.current === me) setError(null) // transient error recovered
-          if (engine === 'webspeech') latest.current.onPhantom?.('')
-          else if (shadowed) {
+          // without a browser recognizer the phantom is this engine's interim, which the final replaces
+          if (!shadowed) latest.current.onPhantom?.('')
+          else {
             // drop as many phantom words as the final has; between the browser's phrases, rebase so word-count drift can't build up
             const s = shadow.current
             s.consumed += words(text).length
