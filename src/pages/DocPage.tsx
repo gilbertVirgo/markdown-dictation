@@ -139,7 +139,10 @@ export default function DocPage() {
 
   const vocabulary = useCallback(() => extractVocabulary(markdown()), [markdown])
   const onFinal = useCallback((text: string) => (onChunk(text, nextRef.current), pickNext('body')), [onChunk, pickNext])
-  const onActive = useCallback((a: boolean) => (setDictating(a), a || pickNext('body')), [pickNext])
+  const onActive = useCallback((a: boolean) => {
+    setDictating(a)
+    if (!a) pickNext('body')
+  }, [pickNext])
 
   useEffect(() => {
     if (!import.meta.env.DEV) return

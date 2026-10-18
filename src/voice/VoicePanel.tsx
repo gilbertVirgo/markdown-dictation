@@ -34,7 +34,9 @@ export function VoicePanel({ onFinal, onPhantom, onActive, next, vocabulary, set
     : t.error
 
   const active = t.live || t.connecting
-  useEffect(() => onActive(active), [active, onActive])
+  useEffect(() => {
+    onActive(active) // braces: an effect's return value is its cleanup
+  }, [active, onActive])
 
   const status = notice ? 'Mic error' : t.connecting ? 'Connecting' : t.live ? `Listening · next: ${NAMES[next]}` : 'Tap to dictate'
 

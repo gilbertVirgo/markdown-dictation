@@ -77,7 +77,12 @@ export const Editor = forwardRef<EditorHandle, { initial: string; onChange(read:
       insertChunk: (text, block, pendingId) => (editor ? insertChunk(editor, text, block, pendingId) : null),
       replacePending: (pendingId, text) => editor && replacePending(editor, pendingId, text),
       clearPending: (pendingId) => editor && clearPending(editor, pendingId),
-      setPhantom: (text) => editor && !editor.isDestroyed && editor.view.dispatch(editor.state.tr.setMeta(phantomKey, text)),
+      setPhantom: (text) => {
+        if (!editor || editor.isDestroyed) return
+        editor.view.dispatch(editor.state.tr.setMeta(phantomKey, text))
+        // at the end of the doc, so keep it in view while dictating (no-op when it's already visible)
+        if (text) editor.view.dom.querySelector('.phantom')?.scrollIntoView({ block: 'nearest' })
+      },
       headingBlocks: () => {
         if (!editor) return []
         editor.view.dispatch(anchorTr(editor.state))
