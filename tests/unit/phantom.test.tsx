@@ -56,3 +56,18 @@ it('WebKit skips the browser recognizer and shows Deepgram interims instead', as
   act(() => started.deepgram.onFinal('Hello there.')) // the final text replaces the grey copy
   expect(phantom).toHaveBeenLastCalledWith('')
 })
+
+it('falls back to the engine interim when the browser recognizer has nothing or fails', async () => {
+  webkit = false
+  const phantom = vi.fn()
+  await mount(phantom)
+  act(() => started.deepgram.onStream!({} as MediaStream))
+  act(() => started.deepgram.onInterim('deepgram heard'))
+  expect(phantom).toHaveBeenLastCalledWith('deepgram heard') // browser recognizer silent so far
+  act(() => started.webspeech.onInterim('browser heard more'))
+  expect(phantom).toHaveBeenLastCalledWith('browser heard more')
+  act(() => started.webspeech.onError('network'))
+  expect(phantom).toHaveBeenLastCalledWith('deepgram heard')
+  act(() => started.deepgram.onFinal('Deepgram heard.'))
+  expect(phantom).toHaveBeenLastCalledWith('')
+})

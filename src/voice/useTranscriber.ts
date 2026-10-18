@@ -34,10 +34,12 @@ export function useTranscriber(opts: {
   const raf = useRef(0)
   // Phantoms: the slower engines (Deepgram, OpenAI) are shadowed by the free browser recognizer, which shows words first.
   // heard = its words so far, consumed = how many of them the main engine has since finalised.
+  // Whenever it has nothing (no recognizer, WebKit, or it failed), the main engine's own interim is shown instead.
   const shadow = useRef({ heard: [] as string[], interim: [] as string[], consumed: 0 })
+  const engineInterim = useRef('')
   const showPhantom = useCallback(() => {
     const s = shadow.current
-    latest.current.onPhantom?.([...s.heard, ...s.interim].slice(s.consumed).join(' '))
+    latest.current.onPhantom?.([...s.heard, ...s.interim].slice(s.consumed).join(' ') || engineInterim.current)
   }, [])
   const words = (t: string) => t.split(/\s+/).filter(Boolean)
 
@@ -53,6 +55,8 @@ export function useTranscriber(opts: {
     ENGINES[engine].stop()
     if (engine !== 'webspeech') webspeech.stop()
     shadow.current = { heard: [], interim: [], consumed: 0 }
+    engineInterim.current = ''
+    engineInterim.current = ''
     latest.current.onPhantom?.('')
     stopMeter()
     setLive(false)
@@ -93,7 +97,12 @@ export function useTranscriber(opts: {
                 shadow.current.interim = words(text)
                 showPhantom()
               },
-              onError() {},
+              onError() {
+                // the browser recognizer gave up: fall back to the main engine's interim
+                if (call.current !== me) return
+                shadow.current = { heard: [], interim: [], consumed: 0 }
+                showPhantom()
+              },
             })
           if (!ctx) return
           const analyser = ctx.createAnalyser()
@@ -113,20 +122,20 @@ export function useTranscriber(opts: {
         onFinal(text) {
           setInterim('')
           if (!failed && call.current === me) setError(null) // transient error recovered
-          // without a browser recognizer the phantom is this engine's interim, which the final replaces
-          if (!shadowed) latest.current.onPhantom?.('')
-          else {
+          engineInterim.current = '' // the final replaces it
+          if (shadowed) {
             // drop as many phantom words as the final has; between the browser's phrases, rebase so word-count drift can't build up
             const s = shadow.current
             s.consumed += words(text).length
             if (!s.interim.length) shadow.current = { heard: s.heard.slice(s.consumed), interim: [], consumed: 0 }
-            showPhantom()
           }
+          showPhantom()
           latest.current.onFinal(text)
         },
         onInterim(text) {
           setInterim(text)
-          if (!shadowed) latest.current.onPhantom?.(text) // no browser recognizer: the engine's own interim is the phantom
+          engineInterim.current = text
+          showPhantom()
         },
         onError(msg, fatal = true) {
           if (call.current !== me) return
