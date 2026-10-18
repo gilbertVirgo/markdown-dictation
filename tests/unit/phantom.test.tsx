@@ -53,4 +53,6 @@ it('WebKit skips the browser recognizer and shows Deepgram interims instead', as
   expect(started.webspeech).toBeUndefined()
   act(() => started.deepgram.onInterim('hello there'))
   expect(phantom).toHaveBeenLastCalledWith('hello there')
+  act(() => started.deepgram.onFinal('Hello there.')) // the final text replaces the grey copy
+  expect(phantom).toHaveBeenLastCalledWith('')
 })
