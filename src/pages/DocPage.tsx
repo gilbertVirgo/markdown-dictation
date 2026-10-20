@@ -15,10 +15,10 @@ import { ArrowLeft, BookOpen, MoreVertical, PanelLeft, Settings as SettingsIcon,
 
 type Doc = { id: string; title: string; markdown: string; updatedAt: string }
 
-// indent em spaces and block breaks aren't characters anyone typed
+// block breaks aren't characters anyone typed
 function count(text: string) {
   const n = (x: number, unit: string) => `${x.toLocaleString()} ${unit}${x === 1 ? '' : 's'}`
-  return [n(text.match(/\S+/g)?.length ?? 0, 'word'), n([...text.replace(/[\n\u2003]/g, '')].length, 'character')]
+  return [n(text.match(/\S+/g)?.length ?? 0, 'word'), n([...text.replace(/\n/g, '')].length, 'character')]
 }
 
 const STATUS = { saved: 'Saved', saving: 'Saving…', error: 'Offline — unsaved' }

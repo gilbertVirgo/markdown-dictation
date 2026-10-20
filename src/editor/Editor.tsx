@@ -3,10 +3,11 @@ import { EditorContent, useEditor, type Editor as TiptapEditor } from '@tiptap/r
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Paragraph from '@tiptap/extension-paragraph'
+import Heading from '@tiptap/extension-heading'
 import { Markdown } from 'tiptap-markdown'
 import Toolbar, { type NextBlock } from './Toolbar'
 import { PendingMark } from './PendingMark'
-import { Indent } from './Indent'
+import { Indent, indentPrefix } from './Indent'
 import { Phantom, phantomKey } from './Phantom'
 import { Suggestions, anchorTr, dropTr, headingBlocks, keepTr, suggestTr, suggestionsKey } from './Suggestions'
 import type { HeadingBlock, HeadingSuggestion } from '../lib/headingsPrompt'
@@ -29,13 +30,16 @@ export type EditorHandle = {
   dropHeadings(): void
 }
 
-// Markdown collapses blank lines, so an empty paragraph (an extra line break) is written as &nbsp; and emptied again on load
+type MdState = { write(s: string): void; renderInline(n: PMNode, fromBlockStart?: boolean): void; closeBlock(n: PMNode): void }
+
+// Markdown collapses blank lines, so an empty paragraph (an extra line break) is written as &nbsp; and emptied again on load.
+// An indented one is written as its indent alone (Indent.ts).
 const BlankParagraph = Paragraph.extend({
   addStorage: () => ({
     markdown: {
-      serialize(state: { write(s: string): void; renderInline(n: PMNode): void; closeBlock(n: PMNode): void }, node: PMNode) {
-        if (node.childCount) state.renderInline(node)
-        else state.write('&nbsp;')
+      serialize(state: MdState, node: PMNode) {
+        state.write(indentPrefix(node) || (node.childCount ? '' : '&nbsp;'))
+        state.renderInline(node)
         state.closeBlock(node)
       },
       parse: {
@@ -45,10 +49,24 @@ const BlankParagraph = Paragraph.extend({
   }),
 })
 
+// tiptap-markdown's heading serializer, plus the indent prefix after the #s
+const IndentedHeading = Heading.extend({
+  addStorage: () => ({
+    markdown: {
+      serialize(state: MdState, node: PMNode) {
+        state.write('#'.repeat(node.attrs.level) + ' ' + indentPrefix(node))
+        state.renderInline(node, false)
+        state.closeBlock(node)
+      },
+    },
+  }),
+}).configure({ levels: [1, 2, 3] })
+
 // Shared with tests/unit/editor.test.ts so both build the same schema.
 export const extensions = [
-  StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false, paragraph: false }),
+  StarterKit.configure({ heading: false, link: false, paragraph: false }),
   BlankParagraph,
+  IndentedHeading,
   Link.configure({ openOnClick: false }),
   Markdown.configure({ transformPastedText: true, breaks: true }),
   PendingMark,
@@ -62,6 +80,8 @@ export const Editor = forwardRef<EditorHandle, { initial: string; onChange(read:
     const editor = useEditor({
       extensions,
       content: initial,
+      // the browser's own spellchecker (and iOS autocorrect while typing); dictated text is checked too
+      editorProps: { attributes: { spellcheck: 'true', autocorrect: 'on', autocapitalize: 'sentences' } },
       // hands over a reader, not the markdown: serialising the whole doc on every keystroke grows Safari's
       // memory until it reloads the tab. Storage is gone after destroy, so the last save reads the copy taken then.
       onCreate: ({ editor }) => void editor.on('destroy', () => finals.set(editor, getMarkdown(editor))),

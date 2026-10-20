@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useEditorState, type Editor } from '@tiptap/react'
-import { Link, List, Quote } from '../ui/icons'
+import { Link, List, ListOrdered, Quote } from '../ui/icons'
 import type { BlockType } from '../lib/refinePrompt'
 
 // While dictating, the block buttons pick the next dictated chunk's type instead of formatting the cursor's block.
@@ -18,6 +18,7 @@ export default function Toolbar({ editor, next }: { editor: Editor; next: NextBl
       h3: e.isActive('heading', { level: 3 }),
       quote: e.isActive('blockquote'),
       bullet: e.isActive('bulletList'),
+      ordered: e.isActive('orderedList'),
     }),
   })
 
@@ -31,7 +32,7 @@ export default function Toolbar({ editor, next }: { editor: Editor; next: NextBl
 
   const c = () => editor.chain().focus()
   const block = (b: BlockType, format: () => void) => () => (next ? next.pick(b) : format())
-  const body = !(active.h1 || active.h2 || active.h3 || active.quote)
+  const body = !(active.h1 || active.h2 || active.h3 || active.quote || active.bullet || active.ordered)
   const buttons: [string, ReactNode, () => void, boolean][] = [
     ['bold', 'B', () => c().toggleBold().run(), active.bold],
     ['italic', 'I', () => c().toggleItalic().run(), active.italic],
@@ -42,6 +43,7 @@ export default function Toolbar({ editor, next }: { editor: Editor; next: NextBl
     ['body', '¶', block('body', () => c().setParagraph().lift('blockquote').run()), next ? next.block === 'body' : body],
     ['quote', <Quote className="mx-auto size-5" />, block('quote', () => c().toggleBlockquote().run()), next ? next.block === 'quote' : active.quote],
     ['bullet', <List className="mx-auto size-5" />, () => c().toggleBulletList().run(), active.bullet],
+    ['numbered', <ListOrdered className="mx-auto size-5" />, () => c().toggleOrderedList().run(), active.ordered],
   ]
   const isBlock = (k: string) => next && ['h1', 'h2', 'h3', 'body', 'quote'].includes(k)
 
@@ -57,7 +59,7 @@ export default function Toolbar({ editor, next }: { editor: Editor; next: NextBl
           onMouseDown={(e) => e.preventDefault()}
           onClick={run}
           // tangerine = next dictated block; ink = the cursor's formatting
-          className={`min-h-11 min-w-10 flex-1 px-2 text-[15px] lg:min-w-11 lg:flex-none ${k === 'bold' ? 'font-extrabold' : 'font-medium'} ${on ? (isBlock(k) ? 'bg-hot text-on-hot' : 'bg-ink text-c50') : 'text-ink hover:bg-c200'} ${k === 'italic' ? 'italic' : ''}`}
+          className={`min-h-11 min-w-9 flex-1 px-2 text-[15px] lg:min-w-11 lg:flex-none ${k === 'bold' ? 'font-extrabold' : 'font-medium'} ${on ? (isBlock(k) ? 'bg-hot text-on-hot' : 'bg-ink text-c50') : 'text-ink hover:bg-c200'} ${k === 'italic' ? 'italic' : ''}`}
         >
           {label}
         </button>

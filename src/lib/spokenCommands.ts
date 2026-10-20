@@ -3,6 +3,7 @@ const RULES: [RegExp, string][] = [
   [/\s*\b(?:new paragraph|paragraph break)\b[\s,.]*/gi, '\n\n'],
   [/\s*\b(?:new line break|new line|newline|line break|carriage return)\b[\s,.]*/gi, '\n'],
   [/(^|\n)[ \t]*\bbullet point\b\s*/gi, '$1- '],
+  [/(^|\n)[ \t]*\bnumber(?:ed)? point\b\s*/gi, '$11. '], // markdown renumbers the list
   [/\s*\bfull stop\b/gi, '.'],
   [/\s*\bcomma\b/gi, ','],
   [/\s*\bquestion mark\b/gi, '?'],
