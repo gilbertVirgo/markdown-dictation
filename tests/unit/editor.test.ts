@@ -270,3 +270,24 @@ it('keep all inserts every heading; a suggestion goes when its block is deleted'
   ed.commands.undo() // kept headings are ordinary edits
   expect(getMarkdown(ed)).not.toContain('##')
 })
+
+it('curls quotes in dictated and typed text, not in code or loaded docs', () => {
+  make('Kept "straight" and `"code"`.')
+  insertChunk(ed, 'he said "hi"', 'body', 'a')
+  replacePending(ed, 'a', 'He said "it\'s fine" (\'really\').')
+  ed.commands.insertContentAt(ed.state.doc.content.size - 1, ' "Typed"')
+  expect(getMarkdown(ed)).toBe('Kept "straight" and `"code"`. He said “it’s fine” (‘really’). “Typed”')
+})
+
+it('types apostrophe words and dashes one key at a time', () => {
+  make('')
+  const type = (s: string) => [...s].forEach((c) => ed.view.dispatch(ed.state.tr.insertText(c, ed.state.doc.content.size - 1)))
+  type(`'til the '90s, rock 'n' roll -- 'tile' - "ok"`)
+  expect(getMarkdown(ed)).toBe('’til the ’90s, rock ’n’ roll — ‘tile’ – “ok”')
+})
+
+it('leaves a line of hyphens for the horizontal rule', () => {
+  make('')
+  ed.view.dispatch(ed.state.tr.insertText('---', 1))
+  expect(ed.getText()).toBe('---')
+})

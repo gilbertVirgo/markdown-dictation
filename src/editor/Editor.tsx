@@ -9,6 +9,7 @@ import Toolbar, { type NextBlock } from './Toolbar'
 import { PendingMark } from './PendingMark'
 import { Indent, indentPrefix } from './Indent'
 import { Phantom, phantomKey } from './Phantom'
+import { SmartQuotes } from './SmartQuotes'
 import { Suggestions, anchorTr, dropTr, headingBlocks, keepTr, suggestTr, suggestionsKey } from './Suggestions'
 import type { HeadingBlock, HeadingSuggestion } from '../lib/headingsPrompt'
 import type { Node as PMNode } from '@tiptap/pm/model'
@@ -73,6 +74,7 @@ export const extensions = [
   Indent,
   Phantom,
   Suggestions,
+  SmartQuotes,
 ]
 
 export const Editor = forwardRef<EditorHandle, { initial: string; onChange(read: () => string): void; onSuggestions?(count: number): void; editable?: boolean; next?: NextBlock | null }>(
