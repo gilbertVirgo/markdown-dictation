@@ -22,5 +22,6 @@ describe('applySpokenCommands', () => {
     expect(f('new line break')).toBe('\n')
     expect(f('new paragraph')).toBe('\n\n')
   })
+  it('numbered point starts a numbered line', () => expect(f('numbered point one new line number point two')).toBe('1. one\n1. two'))
   it('bare bullet is a word', () => expect(f('bullet train')).toBe('bullet train'))
 })

@@ -170,15 +170,30 @@ it('indent survives a markdown round trip and carries over on Enter', () => {
   expect(getMarkdown(ed)).toBe(md)
 })
 
-it('Backspace inside the indent removes one whole level', () => {
-  make('&emsp;&emsp;Top')
+it('Backspace at the start of an indented block outdents before joining', () => {
+  make('Top\n\n&emsp;&emsp;&emsp;&emsp;Next')
   ed.commands.focus('end')
-  key('Enter') // carries one level
-  key('Tab')
+  ed.commands.setTextSelection(ed.state.doc.content.size - 5) // start of "Next"
   key('Backspace')
-  expect(getMarkdown(ed)).toBe('&emsp;&emsp;Top\n\n&emsp;&emsp;')
+  expect(getMarkdown(ed)).toBe('Top\n\n&emsp;&emsp;Next')
   key('Backspace')
-  expect(getMarkdown(ed)).toBe('&emsp;&emsp;Top')
+  expect(getMarkdown(ed)).toBe('Top\n\nNext')
+  key('Backspace')
+  expect(getMarkdown(ed)).toBe('TopNext')
+})
+
+it('old em-space markdown loads as an indent attribute, not text', () => {
+  make('&emsp;&emsp;Hi')
+  const p = ed.state.doc.firstChild!
+  expect(p.attrs.indent).toBe(1)
+  expect(p.textContent).toBe('Hi')
+})
+
+it('heading indent survives a markdown round trip', () => {
+  make('## &emsp;&emsp;&emsp;&emsp;Title')
+  const h = ed.state.doc.firstChild!
+  expect([h.type.name, h.attrs.indent, h.textContent]).toEqual(['heading', 2, 'Title'])
+  expect(getMarkdown(ed)).toBe('## &emsp;&emsp;&emsp;&emsp;Title')
 })
 
 it('Tab and Mod-] indent the whole block from mid-text, Mod-[ outdents', () => {
@@ -188,7 +203,8 @@ it('Tab and Mod-] indent the whole block from mid-text, Mod-[ outdents', () => {
   expect(getMarkdown(ed)).toContain('\n\n&emsp;&emsp;Hello')
   ed.view.dom.dispatchEvent(new KeyboardEvent('keydown', { key: ']', ctrlKey: true, bubbles: true })) // jsdom isn't a Mac: Mod is Ctrl
   expect(getMarkdown(ed)).toContain('\n\n&emsp;&emsp;&emsp;&emsp;Hello')
-  expect(ed.view.dom.querySelectorAll('p')[1]!.style.getPropertyValue('--indent')).toBe('4')
+  const p = ed.view.dom.querySelectorAll('p')[1]!
+  expect([p.dataset.indent, p.style.paddingLeft]).toEqual(['2', '4em'])
   ed.view.dom.dispatchEvent(new KeyboardEvent('keydown', { key: '[', ctrlKey: true, bubbles: true }))
   expect(getMarkdown(ed)).toContain('\n\n&emsp;&emsp;Hello')
 })
