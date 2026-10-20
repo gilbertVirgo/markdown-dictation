@@ -1,4 +1,4 @@
-# Reskin: Bricolage + Garamond, sand and tangerine, desktop sidebar
+# Reskin: Bricolage + Garamond, stone and tangerine, desktop sidebar
 
 Builds on PR #2's structure (always-editable doc, pinned toolbar, always-on voice panel, tap start/stop mic with level ring, pending text in accent). Replaces PR #2's look (three colours, 0.5px hairlines, rounded corners).
 
@@ -13,21 +13,21 @@ Builds on PR #2's structure (always-editable doc, pinned toolbar, always-on voic
 
 ## Colour
 
-Sand neutrals with a tangerine accent (hue ~30°, low saturation). Areas separated by fill colour, never lines. Orange appears only where it means something: live mic, level ring, pending text, + button, Delete, error status.
+Stone neutrals (warm grey, near-neutral; replaced the original sand on 2026-10-19 to feel more neutral) with a saturated tangerine accent. Areas separated by fill colour, never lines. Orange appears only where it means something: live mic, level ring, pending text, + button, Delete, error status.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `--c50` | `#F8F5F1` | `#161310` | page / editor |
-| `--c100` | `#EEE7DF` | `#1F1B17` | sidebar, header, toolbar, picker strip |
-| `--c200` | `#E0D4C6` | `#2C261F` | voice dock, selected doc, dialog |
-| `--c300` | `#C9B49E` | `#4D4237` | loading bars, placeholder |
-| `--ink` | `#2E241C` | `#F1EBE4` | text, selected chip fill |
-| `--mute` | `#665443` | `#A8998A` | small labels, interim transcript |
+| `--c50` | `#F7F6F4` | `#141312` | page / editor |
+| `--c100` | `#EDEBE8` | `#1C1B19` | sidebar, header, toolbar, picker strip |
+| `--c200` | `#E0DDD8` | `#292724` | voice dock, selected doc, dialog |
+| `--c300` | `#BFB9B1` | `#48443F` | loading bars, placeholder |
+| `--ink` | `#22201D` | `#F0EEEB` | text, selected chip fill |
+| `--mute` | `#615C55` | `#A39E97` | small labels, interim transcript |
 | `--hot` | `#F2701F` | `#F2701F` | fills: live mic, level ring, + button |
-| `--hot-text` | `#98440C` | `#F2701F` | text: pending chunk, Delete, error status |
-| `--on-hot` | `#2E241C` | `#2E241C` | icon on `--hot` fills |
+| `--hot-text` | `#97420A` | `#F58A45` | text: pending chunk, Delete, error status |
+| `--on-hot` | `#22201D` | `#22201D` | icon on `--hot` fills |
 
-Contrast (WCAG AA): `--mute` ≥ 4.9:1 on every panel in both modes. `--hot-text` ≥ 4.5:1 on c50/c100/c200 in both modes; icons on `--hot` use `--on-hot` (5.1:1), not white (2.9:1).
+Contrast (WCAG AA): `--mute` ≥ 4.9:1 on every panel in both modes. `--hot-text` ≥ 5.0:1 on c50/c100/c200 in both modes; icons on `--hot` use `--on-hot` (5.5:1), not white (2.9:1).
 
 Selected state (block picker, text size, active toolbar mark) = solid `--ink` block with `--c50` text. `theme-color` meta follows `--c100`.
 
