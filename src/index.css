@@ -14,10 +14,10 @@
   --color-on-hot: var(--on-hot);
 }
 
-/* sand + tangerine; every text/fill pair is WCAG AA (see spec) */
-:root { --c50: #F8F5F1; --c100: #EEE7DF; --c200: #E0D4C6; --c300: #C9B49E; --ink: #2E241C; --mute: #665443; --hot: #F2701F; --hot-text: #98440C; --on-hot: #2E241C; --ease: cubic-bezier(.22, 1, .36, 1); }
+/* stone + tangerine; every text/fill pair is WCAG AA (see spec) */
+:root { --c50: #F7F6F4; --c100: #EDEBE8; --c200: #E0DDD8; --c300: #BFB9B1; --ink: #22201D; --mute: #615C55; --hot: #F2701F; --hot-text: #97420A; --on-hot: #22201D; --ease: cubic-bezier(.22, 1, .36, 1); }
 @media (prefers-color-scheme: dark) {
-  :root { --c50: #161310; --c100: #1F1B17; --c200: #2C261F; --c300: #4D4237; --ink: #F1EBE4; --mute: #A8998A; --hot-text: #F2701F; }
+  :root { --c50: #141312; --c100: #1C1B19; --c200: #292724; --c300: #48443F; --ink: #F0EEEB; --mute: #A39E97; --hot-text: #F58A45; }
 }
 
 /* two UI sizes only: BIG and small */
@@ -30,7 +30,7 @@ body { background: var(--c50); color: var(--ink); font-family: var(--font-sans);
 @layer base {
   select {
     appearance: none; padding-right: 2.25rem;
-    background: var(--c50) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238E7B69' stroke-width='1.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 0.75rem center / 1rem;
+    background: var(--c50) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238F8880' stroke-width='1.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 0.75rem center / 1rem;
   }
 }
 
